@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block board_views %}
+
+<style>
+.glyphicon-refresh-animate {
+    -animation: spin .7s infinite linear;
+    -webkit-animation: spin2 .7s infinite linear;
+}
+
+@-webkit-keyframes spin2 {
+    from { -webkit-transform: rotate(0deg);}
+    to { -webkit-transform: rotate(360deg);}
+}
+
+@keyframes spin {
+    from { transform: scale(1) rotate(0deg);}
+    to { transform: scale(1) rotate(360deg);}
+}
+</style>
+
+<div class="panel with-nav-tabs panel-info">
+    <div class="panel-heading">
+            <ul class="nav nav-tabs">
+                <li class="active"><a href="#board_eps" data-toggle="tab">EPS</a></li>
+                <li><a href="#board_cdh" data-toggle="tab">CD&H</a></li>
+                <li><a href="#board_exp" data-toggle="tab">Experiment</a></li>
+            </ul>
+    </div>
+    <div class="panel-body">
+        <div class="tab-content">
+
+            {% include educube_eps.html %}
+            {% include educube_cdh.html %}
+            {% include educube_exp.html %}
+
+        </div>
+    </div>
+</div>
+{% end %}

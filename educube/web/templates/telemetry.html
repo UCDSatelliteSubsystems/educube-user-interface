@@ -1,0 +1,108 @@
+<style>
+#telemetry_block{ 
+    position: relative;
+    overflow: hidden;
+    height: 400px;
+}
+
+.ina-block .panel-heading {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+
+}
+
+.ina-block .panel-body {
+    padding-top: 5px;
+    padding-bottom: 0px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.ow-block .panel-heading {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+
+}
+
+.ow-block .panel-body {
+    padding-top: 5px;
+    padding-bottom: 0px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+</style>
+
+<div id="telemetry_block">
+</div>
+
+<div style="display:none;">
+    <div id="eps_telem_template" type="text/x-jQuery-tmpl">
+        <div class="row">
+            <h3>Device Charging: ${CHARGING}</h3>
+        </div>
+        <div class="row">
+            <h3>OneWire</h3>
+            <div class="col-sm-2 ow-block">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h4 class="panel-title">DS2438</h3>
+                    </div>
+                    <div class="panel-body">
+                        <dl>
+                            <dt>Temp</dt><dd><span class="label label-primary">${DS2438.temp} V</span></dd>
+                            <dt>Voltage</dt><dd><span class="label label-primary">${DS2438.voltage} V</span></dd>
+                            <dt>Current</dt><dd><span class="label label-primary">${DS2438.current} mA</span></dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-2 ow-block">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h4 class="panel-title">DS18B20_A</h3>
+                    </div>
+                    <div class="panel-body">
+                        <dl>
+                            <dt>Temp</dt><dd><span class="label label-primary">${DS18B20_A.temp} V</span></dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-2 ow-block">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h4 class="panel-title">DS18B20_B</h3>
+                    </div>
+                    <div class="panel-body">
+                        <dl>
+                            <dt>Temp</dt><dd><span class="label label-primary">${DS18B20_B.temp} V</span></dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <h3>INA information</h3>  
+            {{!each INA}}
+                <div class="col-sm-2 ina-block">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h4 class="panel-title">INA: ${address}</h3>
+                        </div>
+                        <div class="panel-body">
+                            <dl>
+                                <dt>Bus</dt><dd><span class="label label-primary">${bus_V} V</span></dd>
+                                <dt>Shunt</dt><dd><span class="label label-primary">${shunt_V} V</span></dd>
+                                <dt>Current</dt><dd><span class="label label-primary">${current_mA} mA</span></dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            {{!/each}}
+        </div>
+    </div>
+</div>
