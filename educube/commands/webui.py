@@ -8,7 +8,7 @@ import click
 import tornado
 import tornado.web
 import tornado.httpserver
-import web.server as webserver
+import educube.web.server as webserver
 
 
 @click.group()

@@ -1,13 +1,13 @@
 import json
-import ec_settings
 import tornado.web
 import tornado.ioloop
-import util.educube_conn as educonn
-import util.display as display
+
+import educube.util.display as display
+import educube.util.educube_conn as educonn
+import educube.web.ec_settings as ec_settings
 
 from tornado import websocket
-from web.board_interface import *
-from util.telemetry_parser import TelemetryParser
+from educube.util.telemetry_parser import TelemetryParser
 
 import logging
 logger = logging.getLogger(__name__)

@@ -4,16 +4,15 @@ def readme():
     with open('README.rst') as f:
         return f.read()
 
-# TODO: build this including dependencies
-
 setup(name='educube',
-      version='0.0.1',
-      description='EduCube Tool',
+      version='0.1',
+      download_url='https://github.com/ezeakeal/educube_client/tarball/0.1',
+      keywords=['educube'],
+      description='EduCube Client',
       long_description=readme(),
-      url='http://docs.gavip.science',
       author='UCD',
       author_email='daniel.vagg@gmail.com',
-      license='LGPL',
+      license='GPLv3',
       packages=find_packages(),
       install_requires=[
         'click',
@@ -22,7 +21,6 @@ setup(name='educube',
         'pygments',
         'tabulate',
         'tornado',
-        'html5lib<=0.9999999'
       ],
       tests_require=[
         'nose',

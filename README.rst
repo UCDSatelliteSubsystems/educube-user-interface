@@ -1,5 +1,5 @@
-$project
-========
+EduCube Client
+==============
 
 Python client for the EduCube educational satellite
 

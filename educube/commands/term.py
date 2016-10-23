@@ -4,9 +4,9 @@ import time
 import click
 
 from tabulate import tabulate
-import util.display as display
-import util.educube_conn as educonn
-import lib.term as term_commands
+import educube.util.display as display
+import educube.util.educube_conn as educonn
+import educube.lib.term as term_commands
 
 import logging
 logger = logging.getLogger(__name__)
