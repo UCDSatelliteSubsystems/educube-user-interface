@@ -11,7 +11,7 @@ import logging.config
 import logging
 logger = logging.getLogger(__name__)
 
-plugin_folder = os.path.join(os.path.dirname(__file__), 'educube', 'commands')
+plugin_folder = os.path.join(os.path.dirname(__file__), 'commands')
 
 
 def configure_logging(verbose):
