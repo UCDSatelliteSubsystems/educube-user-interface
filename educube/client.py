@@ -11,7 +11,7 @@ import logging.config
 import logging
 logger = logging.getLogger(__name__)
 
-plugin_folder = os.path.join(os.path.dirname(__file__), 'commands')
+plugin_folder = os.path.join(os.path.dirname(__file__), 'educube', 'commands')
 
 
 def configure_logging(verbose):
@@ -50,36 +50,28 @@ class EduCubeCLI(click.MultiCommand):
             sys.exit(0)
 
 
-def validate_satellite_connection(ctx, param, value):
-    """
-    Todo:
-    Scan for serial connections and automatically start them up
-    """
 
-    def _test_serial_readable(port):
-        try:
-            ser = serial.Serial(value, 9600, timeout=1)
-            if ser.read():
-                logger.debug('Serial open: %s' % value)
-            logger.debug('Serial closed: %s' % value)
-            ser.close()
-        except serial.serialutil.SerialException as e:
-            raise click.BadParameter("Serial not readable: %s" % e)
-
-    if param.name == "xbee":
-        pass 
-    if param.name == "serial":
-        _test_serial_readable(value)
-        return value
+def verify_serial_connection(port, baud):
+    try:
+        ser = serial.Serial(port, baud, timeout=1)
+        a = ser.read()
+        if a:
+            logger.debug('Serial open: %s' % port)
+        else:
+            logger.debug('Serial exists but is not readable (permissions?): %s' % port)
+        ser.close()
+    except serial.serialutil.SerialException as e:
+        raise click.BadParameter("Serial not readable: %s" % e)
 
 
 @click.command(cls=EduCubeCLI)
+@click.argument('serial')
 @click.option('-v', '--verbose', count=True)
+@click.option('-b', '--baud', default=9600)
+@click.option('-e', '--board', default='CDH')
 @click.option('--json', is_flag=True, default=False, help="Outputs mostly JSON instead")
-@click.option('-x', '--xbee', callback=validate_satellite_connection)
-@click.option('-s', '--serial', callback=validate_satellite_connection)
 @click.pass_context
-def cli(ctx, serial, xbee, json, verbose):
+def cli(ctx, serial, baud, board, json, verbose):
     """
     EduCube
 
@@ -87,22 +79,21 @@ def cli(ctx, serial, xbee, json, verbose):
     to the EduCube toolkit.
 
     """
-    if not (xbee or serial):
-        raise Exception("Either Xbee or Serial must be provided")
-    if xbee and serial:
-        raise Exception("Only Xbee OR Serial must be provided")
-    
-    if xbee:
-        ctx.obj['connection'] = {
-            "type": "xbee",
-            "port": xbee
-        }
-    if serial:
-        ctx.obj['connection'] = {
-            "type": "serial",
-            "port": serial
-        }
     configure_logging(verbose)
+
+    ctx.obj['connection'] = {
+        "type": "serial",
+        "port": serial,
+        "baud": baud,
+        "board": board,
+    }
+    logger.debug("""Running with settings:
+        Verbosity: %s
+        Serial: %s
+        Baudrate: %s
+        EduCube board: %s
+    """ % (verbose, serial, baud, board))
+    verify_serial_connection(serial, baud)
 
 
 if __name__ == '__main__':

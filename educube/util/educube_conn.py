@@ -30,17 +30,22 @@ class EducubeConnection(Thread):
     telem_raw_format = "{datestamp}\t{telem}\n"
 
     def __init__(self, 
-        conn_type, port, 
-        baud=115200, output_path=None,
-        read_interval_ms=500,
+        conn_type, port, board,
+        baud=9600, output_path=None,
+        read_interval_s=30,
         telem_request_interval_s=5):
         ''' Constructor '''
         Thread.__init__(self)
         self.conn_type = conn_type
         self.port = port
         self.baud = baud
+        self.board_id = board
         self.timeout=.5
-        assert(conn_type in ['serial', 'xbee'])
+
+        assert(conn_type in ['serial'])
+        assert(board in [self.board_id_EPS, self.board_id_CDH, 
+            self.board_id_EXP, self.board_id_ADC])
+
         if output_path:
             self.output_path = output_path
         else:
@@ -48,7 +53,7 @@ class EducubeConnection(Thread):
                 tempfile.gettempdir(),
                 "educube_telemetry_%s.raw" % self.conn_type
             )
-        self.read_interval_ms = read_interval_ms
+        self.read_interval_s = read_interval_s
         self.telem_request_interval_s = telem_request_interval_s
         self.setup_connection()
         self.running = True
@@ -56,7 +61,7 @@ class EducubeConnection(Thread):
     
     def  _start_serial_conn(self):
         self.connection = serial.Serial(
-            self.port, self.baud, timeout=.5
+            self.port, self.baud, timeout=3
         )
 
     def  _start_xbee_conn(self):
@@ -68,23 +73,20 @@ class EducubeConnection(Thread):
 
     def _read_telem_serial(self):
         while self.connection.inWaiting() > 0:
+            logger.debug("EduCube connection has data")
             telem_data = self.connection.readline().strip()
             telem = {"time": time.time() * 1000, "data": telem_data}
             self.telemetry_buffer.append(telem)
-            logger.debug("received: %s" % telem)
+            logger.debug("Received telemetry: %s" % telem)
 
     def read_telem(self):
-        if self.conn_type == "serial":
-            self._read_telem_serial()
+        self._read_telem_serial()
 
-    def request_telem(self):
+    def request_telem(self,):
         if (time.time() - self.last_telem_request) > self.telem_request_interval_s:
             self.last_telem_request = time.time()
-            logger.debug("Requesting telemetry")
-            command = self.format_command(
-                self.board_id_CDH, 
-                self.telem_request_command
-            )
+            logger.debug("Requesting telemetry from board %s" % self.board_id)
+            command = self.format_command(self.telem_request_command)
             self.send_command(command)
 
     def setup_connection(self):
@@ -98,7 +100,7 @@ class EducubeConnection(Thread):
         while self.running:
             self.read_telem()
             self.request_telem()
-            time.sleep(self.read_interval_ms/1000.0)
+            time.sleep(self.read_interval_s)
         self.close_connections()
         logger.info("Stopped")
 
@@ -107,11 +109,11 @@ class EducubeConnection(Thread):
         self.write_buffer_to_log()
         return telemetry
 
-    def format_command(self, board, cmd):
+    def format_command(self, cmd):
         formatted_command = '{command_start}{sep}{board}{sep}{command}'.format(
             command_start=self.syntax_command,
             sep=self.syntax_sep,
-            board=board,
+            board=self.board_id,
             command=cmd
         )
         return formatted_command
@@ -156,6 +158,7 @@ def get_connection(connection):
     educube_connection = EducubeConnection(
         connection['type'],
         connection['port'],
+        connection['board']
     )
     educube_connection.start()
     connections.append(educube_connection)

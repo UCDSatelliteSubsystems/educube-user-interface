@@ -119,10 +119,10 @@ class TelemetryParser(object):
             # Handle MAG intensity
             if ctelem_parts[0] == "MAG":
                 telem_structure["MAGNO_TORQ"] = {
-                    "X+": ctelem_parts[1],
-                    "X-": ctelem_parts[2],
-                    "Y+": ctelem_parts[3],
-                    "Y-": ctelem_parts[4]
+                    "X_P": ctelem_parts[1],
+                    "X_N": ctelem_parts[2],
+                    "Y_P": ctelem_parts[3],
+                    "Y_N": ctelem_parts[4]
                 }
             # Handle reaction wheel data
             if ctelem_parts[0] == "ANG":
@@ -148,6 +148,12 @@ class TelemetryParser(object):
                     }
         return telem_structure
 
+    def _degmin_to_deg(degmin):
+        str_val = "%s" % degmin
+        point_loc = str_val.find(".")
+        deg_part = float(str_val[0:point_loc-2])
+        min_part = float(str_val[point_loc-2:])
+        return deg_part + (min_part/60)
 
     def parse_cdh_telem(self, telem):
         telem_structure = {
@@ -160,9 +166,13 @@ class TelemetryParser(object):
             # Handle sunsensors
             if ctelem_parts[0] == "GPS":
                 telem_structure["GPS_DATE"] = ctelem_parts[1]
-                telem_structure["GPS_FIX"] = {
+                telem_structure["GPS_FIX_DEGMIN"] = {
                     "LAT": ctelem_parts[2],
                     "LON": ctelem_parts[3],
+                }
+                telem_structure["GPS_FIX"] = {
+                    "LAT": _degmin_to_deg(ctelem_parts[2]),
+                    "LON": _degmin_to_deg(ctelem_parts[3]),
                 }
                 telem_structure["GPS_META"] = {
                     "HDOP": ctelem_parts[4],

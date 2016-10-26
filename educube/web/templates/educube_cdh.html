@@ -1,6 +1,39 @@
+
 <div class="tab-pane fade" id="board_cdh">
-    <button class="btn btn-lg btn-warning">
-        <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span> 
-        Telemetry Loading...
-    </button>
+    <div class="col-sm-12">
+        <div class="panel panel-primary">
+          <div class="panel-heading">CDH Commands</div>
+          <div class="panel-body">
+            CDH commands
+          </div>
+        </div>
+    </div>
+    <div class="col-sm-12 telem_content">
+        <div class="alert alert-warning" role="alert">
+            CDH Telemetry has not been received yet
+        </div>
+    </div>
+</div>
+
+
+<div style="display:none;">
+    <div id="tmpl-cdh_telem_view" type="text/x-jQuery-tmpl">
+        <div class="row">
+            <h3>GPS data</h3>
+            <dl class="dl-horizontal">
+              <dt>GPS fix time</dt><dd>${GPS_DATE}</dd>
+              <dt>GPS LAT</dt><dd>${GPS_FIX.LAT} deg</dd>
+              <dt>GPS LON</dt><dd>${GPS_FIX.LON} deg</dd>
+              <dt>GPS ALT</dt><dd>${GPS_META.ALT_CM} cm</dd>
+              <dt>GPS HDOP</dt><dd>${GPS_META.HDOP}</dd>
+
+            </dl>
+        </div>
+        <div class="row">
+          <div class="embed-responsive embed-responsive-4by3">
+            <iframe class="embed-responsive-item" src="http://maps.google.com/maps?q=${GPS_FIX.LAT},${GPS_FIX.LON}&z=15&output=embed"></iframe>
+          </div>
+          
+        </div>
+    </div>
 </div>

@@ -1,0 +1,152 @@
+<div class="tab-pane fade" id="board_adc">
+    <div class="col-sm-12">
+        <div class="panel panel-primary">
+          <div class="panel-heading">ADC Commands</div>
+          <div class="panel-body">
+            
+            <div class="col-sm-5">
+              <div class="input-group">
+                  <span class="input-group-addon">Reaction Wheel Power</span>
+                  <input type="number" class="form-control feed_educube_action feed_switch_sign_before" data-actionsel="#wheelspd" data-cmdbefore="REACT|" data-cmdafter="" min="-100" max="100">
+                  <span class="input-group-btn">
+                      <button id="wheelspd" type="button" data-board="ADC" data-cmd="" class="educube_action btn btn-default">Submit</button>
+                  </span>
+              </div>
+            </div>
+
+            <div class="col-sm-7">
+              MagTorquers:
+              <button data-board="ADC" data-cmd="MAG|X|+" class="educube_action btn btn-sm btn-success">X+</button>
+              <button data-board="ADC" data-cmd="MAG|X|0" class="educube_action btn btn-sm btn-default">Off</button>
+              <button data-board="ADC" data-cmd="MAG|X|-" class="educube_action btn btn-sm btn-danger">X-</button>
+              |
+              <button data-board="ADC" data-cmd="MAG|Y|+" class="educube_action btn btn-sm btn-success">Y+</button>
+              <button data-board="ADC" data-cmd="MAG|Y|0" class="educube_action btn btn-sm btn-default">Off</button>
+              <button data-board="ADC" data-cmd="MAG|Y|-" class="educube_action btn btn-sm btn-danger">Y-</button>
+            </div>
+
+          </div>
+        </div>
+    </div>
+    <div class="col-sm-12 telem_content">
+        <div class="alert alert-warning" role="alert">
+            ADC Telemetry has not been received yet
+        </div>
+    </div>
+</div>
+
+
+
+<div style="display:none;">
+    <div id="tmpl-adc_telem_view" type="text/x-jQuery-tmpl">
+        <div class="row">
+            <h3>Attitude Control</h3>  
+            <div class="col-sm-4 ina-block">
+                <div class="panel panel-warning">
+                    <div class="panel-heading">
+                        <h4 class="panel-title">Magneto Torquers</h3>
+                    </div>
+                    <div class="panel-body">
+                        <dl>
+                            <dt>X axis</dt>
+                            <dd>
+                                {{!if MAGNO_TORQ.X_P == 0 }}
+                                  <span class="label label-warning">Enabled (X+)</span>
+                                {{!else MAGNO_TORQ.X_N == 0}}
+                                  <span class="label label-warning">Enabled (X-)</span>
+                                {{!else}}
+                                  <span class="label label-default">Disabled</span>
+                                {{!/if}}
+                            </dd>
+                            <dt>Y axis</dt>
+                            <dd>
+                                {{!if MAGNO_TORQ.X_P == 0 }}
+                                  <span class="label label-warning">Enabled (X+)</span>
+                                {{!else MAGNO_TORQ.X_N == 0}}
+                                  <span class="label label-warning">Enabled (X-)</span>
+                                {{!else}}
+                                  <span class="label label-default">Disabled</span>
+                                {{!/if}}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-4 ina-block">
+                <div class="panel panel-warning">
+                    <div class="panel-heading">
+                        <h4 class="panel-title">Reaction Wheel</h3>
+                    </div>
+                    <div class="panel-body">
+                        <dl>
+                            <dt>Current Value</dt>
+                            <dd>
+                                ${REACT_WHEEL}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="row">
+            <h3>Attitude Determination</h3>  
+            <div class="col-sm-4 ina-block">
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        <h4 class="panel-title">MPU</h3>
+                    </div>
+                    <div class="panel-body">
+                        <dl>
+                            <dt>Acceleration (mg)</dt>
+                            <dd>
+                                <p>X <span class="label label-info">${MPU_ACC.X}</span></p>
+                                <p>Y <span class="label label-info">${MPU_ACC.Y}</span></p>
+                                <p>Z <span class="label label-info">${MPU_ACC.Z}</span></p>
+                            </dd>
+                            <dt>Gyroscope (degree/sec)</dt>
+                            <dd>
+                                <p>X <span class="label label-info">${MPU_GYR.X}</span></p>
+                                <p>Y <span class="label label-info">${MPU_GYR.Y}</span></p>
+                                <p>Z <span class="label label-info">${MPU_GYR.Z}</span></p>
+                            </dd>
+                            <dt>Magnetic (mG)</dt>
+                            <dd>
+                                <p>X <span class="label label-info">${MPU_MAG.X}</span></p>
+                                <p>Y <span class="label label-info">${MPU_MAG.Y}</span></p>
+                                <p>Z <span class="label label-info">${MPU_MAG.Z}</span></p>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-4 ina-block">
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        <h4 class="panel-title">Sun Sensors</h3>
+                    </div>
+                    <div class="panel-body">
+                        <dl>
+                            <dt>Sensors</dt>
+                            <dd>
+                                <p>Front <span class="label label-info">${SUN_SENSORS.FRONT}</span></p>
+                                <p>Right <span class="label label-info">${SUN_SENSORS.RIGHT}</span></p>
+                                <p>Back <span class="label label-info">${SUN_SENSORS.BACK}</span></p>
+                                <p>Left <span class="label label-info">${SUN_SENSORS.LEFT}</span></p>
+                            </dd>
+                            <dt>Sun angle</dt>
+                            <dd>
+                                <span class="label label-success">${SUN_DIR}</span>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</div>

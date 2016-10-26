@@ -50,6 +50,12 @@ class ClientSocket(websocket.WebSocketHandler):
         GLOBALS['sockets'].append(self)
         print "WebSocket opened"
 
+    def on_message(self, message):
+        print "Message received: %s" % message
+        if message.startswith("C|"):
+            send_command(message)
+        # self.write_message(u"You said: " + message)
+        
     def on_close(self):
         print "WebSocket closed"
         GLOBALS['sockets'].remove(self)
@@ -83,6 +89,10 @@ def call_board_updates():
             ws_send(json.dumps(telemetry))
         except Exception as e:
             logger.exception("Telemetry badly formed: %s\n%s" % (telem, e))
+
+
+def send_command(cmd):
+    educube_connection.send_command(cmd)
 
 
 #######################

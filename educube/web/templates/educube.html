@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-
 {% block board_views %}
 
 <style>
@@ -17,23 +16,113 @@
     from { transform: scale(1) rotate(0deg);}
     to { transform: scale(1) rotate(360deg);}
 }
+
+/* make sidebar nav vertical */
+@media (min-width: 768px) {
+    .sidebar-nav .navbar .navbar-collapse {
+        padding: 0;
+        max-height: none;
+    }
+    .sidebar-nav .navbar ul {
+        float: none;
+    }
+    .sidebar-nav .navbar ul:not {
+        display: block;
+    }
+    .sidebar-nav .navbar li {
+        float: none;
+        display: block;
+    }
+    .sidebar-nav .navbar li a {
+        padding-top: 12px;
+        padding-bottom: 12px;
+    }
+}
+
+.board-status {
+    float: right;
+}
 </style>
 
-<div class="panel with-nav-tabs panel-info">
-    <div class="panel-heading">
-            <ul class="nav nav-tabs">
-                <li class="active"><a href="#board_eps" data-toggle="tab">EPS</a></li>
-                <li><a href="#board_cdh" data-toggle="tab">CD&H</a></li>
-                <li><a href="#board_exp" data-toggle="tab">Experiment</a></li>
-            </ul>
+<div class="row">
+    <div class="col-sm-2">
+        <a href="#help" data-toggle="tab" class="btn btn-info btn-sm btn-block">
+            <h4 style="margin:0px;"> <span class="glyphicon glyphicon-question-sign"></span>   Guide</h4>
+        </a>
+        <hr/>
+
+        <div class="sidebar-nav">
+            <div class="navbar navbar-default" role="navigation">
+
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".sidebar-navbar-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    </button>
+                    <span class="visible-xs navbar-brand">Sidebar menu</span>
+                </div>
+
+
+                <div class="navbar-collapse collapse sidebar-navbar-collapse">
+                    <div class="container-fluid text-center">
+                        <h4 class="text-primary">Board Selection</h4>
+                    </div>
+
+                    <ul class="nav navbar-nav">
+                        <li><a href="#board_adc" data-toggle="tab">
+                            <abbr title="Attitude Determination & Control">ADC</abbr>
+                            <div id="telem_status_adc" class="board-status">
+                                <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span> 
+                            </div>
+                        </a></li>
+                        <li><a href="#board_exp" data-toggle="tab">
+                            <abbr title="Thermal Experiment">EXP</abbr>
+                            <div id="telem_status_exp" class="board-status">
+                                <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span> 
+                            </div>
+                        </a></li>
+                        <li><a href="#board_cdh" data-toggle="tab">
+                            <abbr title="Command Data & Handling">CD&H</abbr>
+                            <div id="telem_status_cdh" class="board-status">
+                                <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span> 
+                            </div>
+                        </a></li>
+                        <li><a href="#board_eps" data-toggle="tab">
+                            <abbr title="Electrical Power Systems">EPS</abbr>
+                            <div id="telem_status_eps" class="board-status">
+                                <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span> 
+                            </div>
+                        </a></li>
+                    </ul>
+                </div><!--/.nav-collapse -->
+            </div>
+        </div> 
     </div>
-    <div class="panel-body">
-        <div class="tab-content">
 
-            {% include educube_eps.html %}
-            {% include educube_cdh.html %}
-            {% include educube_exp.html %}
+    <div class="col-sm-10">
+        <div class="panel-body">
+            <div class="tab-content">
+                {% include educube_help.html %}
+                {% include educube_adc.html %}
+                {% include educube_exp.html %}
+                {% include educube_cdh.html %}
+                {% include educube_eps.html %}
+            </div>
+        </div>
+    </div>
 
+
+    <div style="display:none;">
+        <div id="tmpl-telem_status" type="text/x-jQuery-tmpl">
+            <div>
+                {{!if ! telem }}
+                    <span class="board-status glyphicon glyphicon-refresh glyphicon-refresh-animate"></span> 
+                {{!else}}
+                    <span class="label label-success">Ready</span> 
+                {{!/if}}
+            </div>
         </div>
     </div>
 </div>
