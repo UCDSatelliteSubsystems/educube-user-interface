@@ -3,7 +3,31 @@
         <div class="panel panel-primary">
           <div class="panel-heading">EPS Commands</div>
           <div class="panel-body">
-            EPS commands
+            
+            <div class="col-sm-5">
+                <div class="input-group">
+                    <span class="input-group-addon">Enable Pin</span>
+                    <input type="number" class="form-control feed_educube_action" data-actionsel="#pin_on_select" data-cmdbefore="PIN_ON|" data-cmdafter="" min="64" max="75">
+                    <span class="input-group-btn">
+                        <button id="pin_on_select" type="button" data-board="EPS" data-cmd="" class="educube_action btn btn-info">Send</button>
+                    </span>
+                </div>
+            </div>
+
+            <div class="col-sm-5">
+                <div class="input-group">
+                    <span class="input-group-addon">Disable Pin</span>
+                    <input type="number" class="form-control feed_educube_action" data-actionsel="#pin_off_select" data-cmdbefore="PIN_OFF|" data-cmdafter="" min="64" max="75">
+                    <span class="input-group-btn">
+                        <button id="pin_off_select" type="button" data-board="EPS" data-cmd="" class="educube_action btn btn-info">Send</button>
+                    </span>
+                </div>
+            </div>
+            <div class="col-md-2">
+            |
+              <button data-board="CDH" data-cmd="OP" class="educube_action btn btn-warning"><abbr title="Toggle Operational Mode">Op Mode</abbr></button>
+            </div>
+            
           </div>
         </div>
     </div>

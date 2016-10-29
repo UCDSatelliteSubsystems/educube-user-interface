@@ -1,21 +1,30 @@
+import os
 import json
 import tornado.web
 import tornado.ioloop
-
-import educube.util.display as display
-import educube.util.educube_conn as educonn
-import educube.web.ec_settings as ec_settings
-
 from tornado import websocket
+
+from educube.util import display as display
+from educube.util import educube_conn as educonn
+
 from educube.util.telemetry_parser import TelemetryParser
 
 import logging
 logger = logging.getLogger(__name__)
 
 
+##########################
+# Globals
+##########################
+PORT=18888
+dirname = os.path.dirname(__file__)
+STATIC_PATH = os.path.join(dirname, 'static')
+TEMPLATE_PATH = os.path.join(dirname, 'templates')
+
 GLOBALS={
     'sockets': [],
 }
+
 educube_connection = None
 parser = TelemetryParser()
 
@@ -30,10 +39,11 @@ class Application(tornado.web.Application):
             # (r"/push", HandleCommand),
         ]
         settings = {
-            "template_path": ec_settings.TEMPLATE_PATH,
-            "static_path": ec_settings.STATIC_PATH,
+            "template_path": TEMPLATE_PATH,
+            "static_path": STATIC_PATH,
             "debug": True
         }
+        logger.info("Starting web server with settings:\n%s" % json.dumps(settings, indent=2))
         tornado.web.Application.__init__(self, handlers, **settings)
 
 
@@ -105,7 +115,7 @@ def start_webserver(connection):
     # Setup the web application
     applicaton = Application()
     http_server = tornado.httpserver.HTTPServer(applicaton)
-    http_server.listen(ec_settings.PORT)
+    http_server.listen(PORT)
     # Startup periodic calls
     tornado.ioloop.PeriodicCallback(
         call_board_updates, 500
@@ -114,7 +124,7 @@ def start_webserver(connection):
     tornado.autoreload.add_reload_hook( # shutdown serial when reloading
         educonn.shutdown_all_connections
     )
-    print "Visit your browser at http://localhost:%s" % ec_settings.PORT
+    print "Visit your browser at http://localhost:%s" % PORT
     try:
         tornado.ioloop.IOLoop.instance().start()
     except KeyboardInterrupt:

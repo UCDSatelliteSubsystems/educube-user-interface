@@ -5,8 +5,8 @@ def readme():
         return f.read()
 
 setup(name='educube',
-      version='0.4.1',
-      download_url='https://github.com/ezeakeal/educube_client/tarball/0.4.1',
+      version='0.5.0',
+      download_url='https://github.com/ezeakeal/educube_client/tarball/0.5.0',
       keywords=['educube'],
       description='EduCube Client',
       long_description=readme(),
@@ -14,6 +14,7 @@ setup(name='educube',
       author_email='daniel.vagg@gmail.com',
       license='GPLv3',
       packages=find_packages(),
+      include_package_data = True,
       install_requires=[
         'click',
         'markdown',
@@ -27,7 +28,7 @@ setup(name='educube',
       ],
       entry_points={
         'console_scripts': [
-          'educube = educube.client:cli',
+          'educube = educube.client:main',
         ],
       },
       dependency_links=[

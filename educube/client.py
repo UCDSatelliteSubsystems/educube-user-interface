@@ -80,6 +80,12 @@ def cli(ctx, serial, baud, board, json, verbose):
 
     """
     configure_logging(verbose)
+    logger.debug("""Running with settings:
+        Verbosity: %s
+        Serial: %s
+        Baudrate: %s
+        EduCube board: %s
+    """ % (verbose, serial, baud, board))
 
     ctx.obj['connection'] = {
         "type": "serial",
@@ -87,14 +93,10 @@ def cli(ctx, serial, baud, board, json, verbose):
         "baud": baud,
         "board": board,
     }
-    logger.debug("""Running with settings:
-        Verbosity: %s
-        Serial: %s
-        Baudrate: %s
-        EduCube board: %s
-    """ % (verbose, serial, baud, board))
     verify_serial_connection(serial, baud)
 
+def main():
+    cli(obj={}, standalone_mode=False)
 
 if __name__ == '__main__':
-    cli(obj={}, standalone_mode=False)
+    main()

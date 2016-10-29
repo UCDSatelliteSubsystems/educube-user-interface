@@ -4,6 +4,7 @@ import time
 import click
 
 from tabulate import tabulate
+
 import educube.util.display as display
 import educube.util.educube_conn as educonn
 import educube.lib.term as term_commands
