@@ -109,11 +109,14 @@ class EducubeConnection(Thread):
         self.write_buffer_to_log()
         return telemetry
 
-    def format_command(self, cmd):
+    def format_command(self, cmd, board=None):
+        if not board:
+            board=self.board_id
+            
         formatted_command = '{command_start}{sep}{board}{sep}{command}'.format(
             command_start=self.syntax_command,
             sep=self.syntax_sep,
-            board=self.board_id,
+            board=board,
             command=cmd
         )
         return formatted_command
@@ -158,7 +161,8 @@ def get_connection(connection):
     educube_connection = EducubeConnection(
         connection['type'],
         connection['port'],
-        connection['board']
+        connection['board'],
+        baud=connection['baud']
     )
     educube_connection.start()
     connections.append(educube_connection)

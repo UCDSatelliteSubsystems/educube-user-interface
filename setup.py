@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='educube',
-      version='0.5.0',
+      version='0.5.1',
       download_url='https://github.com/ezeakeal/educube_client/tarball/0.5.0',
       keywords=['educube'],
       description='EduCube Client',
@@ -20,6 +20,7 @@ setup(name='educube',
         'markdown',
         'requests',
         'pygments',
+        'pyserial',
         'tabulate',
         'tornado',
       ],
