@@ -7,7 +7,12 @@
             <div class="col-sm-5">
                 <div class="input-group">
                     <span class="input-group-addon">Enable Pin</span>
-                    <input type="number" class="form-control feed_educube_action" data-actionsel="#pin_on_select" data-cmdbefore="PIN_ON|" data-cmdafter="" min="64" max="75">
+                    <select class="form-control feed_educube_action"  data-actionsel="#pin_on_select" data-cmdbefore="PIN_ON|" data-cmdafter="">
+                        <option value="R">Radio</option>
+                        <option value="1">SW1</option>
+                        <option value="2">SW2</option>
+                        <option value="3">SW3</option>
+                    </select>
                     <span class="input-group-btn">
                         <button id="pin_on_select" type="button" data-board="EPS" data-cmd="" class="educube_action btn btn-info">Send</button>
                     </span>
@@ -17,7 +22,12 @@
             <div class="col-sm-5">
                 <div class="input-group">
                     <span class="input-group-addon">Disable Pin</span>
-                    <input type="number" class="form-control feed_educube_action" data-actionsel="#pin_off_select" data-cmdbefore="PIN_OFF|" data-cmdafter="" min="64" max="75">
+                    <select class="form-control feed_educube_action"  data-actionsel="#pin_off_select" data-cmdbefore="PIN_OFF|" data-cmdafter="">
+                        <option value="R">Radio</option>
+                        <option value="1">SW1</option>
+                        <option value="2">SW2</option>
+                        <option value="3">SW3</option>
+                    </select>
                     <span class="input-group-btn">
                         <button id="pin_off_select" type="button" data-board="EPS" data-cmd="" class="educube_action btn btn-info">Send</button>
                     </span>
@@ -36,74 +46,78 @@
         <div class="alert alert-warning" role="alert">
             EPS Telemetry has not been received yet
         </div>
-    </div>    
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="pwr_modal_chart" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="myModalLabel">Power visualization</h4>
+          </div>
+          <div class="modal-body">
+            <div id="current_container" style="width:100%; height:400px;"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary">Save changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
 </div>
 
 
 <div style="display:none;">
-    <div id="tmpl-eps_telem_view" type="text/x-jQuery-tmpl">
+    <script id="tmpl-eps_telem_view" type="text/x-jQuery-tmpl">
         <div class="row">
             <h3>Device Charging: ${CHARGING}</h3>
         </div>
         <div class="row">
-            <h3>OneWire</h3>
-            <div class="col-sm-4 ow-block">
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h4 class="panel-title">DS2438</h3>
-                    </div>
-                    <div class="panel-body">
-                        <dl>
-                            <dt>Temp</dt><dd><span class="label label-primary">${DS2438.temp} V</span></dd>
-                            <dt>Voltage</dt><dd><span class="label label-primary">${DS2438.voltage} V</span></dd>
-                            <dt>Current</dt><dd><span class="label label-primary">${DS2438.current} mA</span></dd>
-                        </dl>
-                    </div>
-                </div>
+            <h3>Main Battery</h3>
+            <div class="col-sm-6 ow-block">
+                <dl class="dl-horizontal">
+                    <dt>Voltage</dt><dd><span class="label label-primary">${DS2438.voltage} V</span></dd>
+                    <dt>Current</dt><dd><span class="label label-primary">${DS2438.current} mA</span></dd>
+                </dl>
             </div>
-            <div class="col-sm-4 ow-block">
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h4 class="panel-title">DS18B20_A</h3>
-                    </div>
-                    <div class="panel-body">
-                        <dl>
-                            <dt>Temp</dt><dd><span class="label label-primary">${DS18B20_A.temp} C</span></dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-4 ow-block">
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h4 class="panel-title">DS18B20_B</h3>
-                    </div>
-                    <div class="panel-body">
-                        <dl>
-                            <dt>Temp</dt><dd><span class="label label-primary">${DS18B20_B.temp} C</span></dd>
-                        </dl>
-                    </div>
-                </div>
+            <div class="col-sm-6 ow-block">
+                <dl class="dl-horizontal">
+                    <dt>Temp</dt><dd><span class="label label-primary">${DS2438.temp} C</span></dd>
+                    <dt>Temp A</dt>
+                    <dd><span class="label label-primary">${DS18B20_A.temp} C</span></dd>
+                    <dt>Temp B</dt>
+                    <dd><span class="label label-primary">${DS18B20_B.temp} C</span></dd>
+                </dl>
             </div>
         </div>
         <div class="row">
-            <h3>INA information</h3>  
-            {{!each INA}}
-                <div class="col-sm-2 ina-block">
-                    <div class="panel panel-default">
-                        <div class="panel-heading">
-                            <h4 class="panel-title">INA: ${address}</h3>
-                        </div>
-                        <div class="panel-body">
-                            <dl>
-                                <dt>Bus</dt><dd><span class="label label-primary">${bus_V} V</span></dd>
-                                <dt>Shunt</dt><dd><span class="label label-primary">${shunt_V} V</span></dd>
-                                <dt>Current</dt><dd><span class="label label-primary">${current_mA} mA</span></dd>
-                            </dl>
-                        </div>
-                    </div>
-                </div>
-            {{!/each}}
+            <h3>Power readout
+            </h3>  
+
+            <table id="ina_pwr_list" class="table table-striped table-bordered table-hover dataTable no-footer display" cellspacing="0" width="100%">
+                <thead>
+                    <tr>
+                        <th>Board ID</th>
+                        <th>Bus (V)</th>
+                        <th>Shunt (V)</th>
+                        <th>Current (mA)</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                {{!each INA}}
+                    <tr>
+                        <td>${name}</td>
+                        <td>${bus_V}</td>
+                        <td>${shunt_V}</td>
+                        <td>${current_mA}</td>
+                    </tr>
+                {{!/each}}
+                </tbody>
+            </table>
+            
         </div>
-    </div>
+    </script>
 </div>

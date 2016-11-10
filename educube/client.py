@@ -69,9 +69,10 @@ def verify_serial_connection(port, baud):
 @click.option('-v', '--verbose', count=True)
 @click.option('-b', '--baud', default=9600)
 @click.option('-e', '--board', default='CDH')
+@click.option('--fake', is_flag=True, default=False, help="Fake the serial")
 @click.option('--json', is_flag=True, default=False, help="Outputs mostly JSON instead")
 @click.pass_context
-def cli(ctx, serial, baud, board, json, verbose):
+def cli(ctx, serial, baud, board, fake, json, verbose):
     """
     EduCube
 
@@ -92,8 +93,11 @@ def cli(ctx, serial, baud, board, json, verbose):
         "port": serial,
         "baud": baud,
         "board": board,
+        "fake": fake,
     }
-    verify_serial_connection(serial, baud)
+    if not fake:
+        verify_serial_connection(serial, baud)
+
 
 def main():
     cli(obj={}, standalone_mode=False)

@@ -1,5 +1,6 @@
+<script src="https://maps.googleapis.com/maps/api/js"></script>
 
-<div class="tab-pane fade" id="board_cdh">
+<div class="tab-pane fade" id="board_cdh" onload="init_cdh_map()">
     <div class="col-sm-12">
         <div class="panel panel-primary">
           <div class="panel-heading">CDH Commands</div>
@@ -17,6 +18,18 @@
             CDH Telemetry has not been received yet
         </div>
     </div>
+    <div class="col-sm-12">
+      <div class="row"> 
+        <style>
+          #map {
+            height: 500px;
+            overflow:visible;
+          }
+        </style>
+
+        <div id="map"></div>
+      </div>
+    </div>
 </div>
 
 
@@ -30,14 +43,7 @@
               <dt>GPS LON</dt><dd>${GPS_FIX.LON} deg</dd>
               <dt>GPS ALT</dt><dd>${GPS_META.ALT_CM} cm</dd>
               <dt>GPS HDOP</dt><dd>${GPS_META.HDOP}</dd>
-
             </dl>
-        </div>
-        <div class="row">
-          <div class="embed-responsive embed-responsive-4by3">
-            <iframe class="embed-responsive-item" src="http://maps.google.com/maps?q=${GPS_FIX.LAT},${GPS_FIX.LON}&z=15&output=embed"></iframe>
-          </div>
-          
         </div>
     </div>
 </div>

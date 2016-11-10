@@ -56,6 +56,28 @@ class TelemetryParser(object):
                         logger.error("Wrong parser defined for %s board: %s" % (bname, board['parser']))
         return telem_struct
 
+    def get_ina_name(address):
+        if address == 66:
+            return "VBatt"
+        if address == 67:
+            return "+5V"
+        if address == 73:
+            return "+3.3V"
+        if address == 68:
+            return "Radio"
+        if address == 69:
+            return "SW1-5V"
+        if address == 72:
+            return "SW1-3V"
+        if address == 70:
+            return "SW2-5V"
+        if address == 74:
+            return "SW2-3V"
+        if address == 71:
+            return "SW3-5V"
+        if address == 75:
+            return "SW3-3V"
+
     def parse_eps_telem(self, telem):
         telem_structure = {
             "INA": [],
@@ -68,12 +90,16 @@ class TelemetryParser(object):
             ctelem_parts = chip_telem.split(",")
             if ctelem_parts[0] == "I":
                 ina_telem = {
+                    "name": get_ina_name(ctelem_parts[1]),
                     "address": ctelem_parts[1],
                     "shunt_V": ctelem_parts[2],
                     "bus_V": ctelem_parts[3],
                     "current_mA": ctelem_parts[4]
                 }
-                telem_structure["INA"].append(ina_telem)
+                if ina_telem['shunt_V'] >0 and ina_telem['current_mA'] >0:
+                    telem_structure["INA"].append(ina_telem)
+                else:
+                    logger.warning("Ommitting bad INA readings: %s" % ina_telem)
             if ctelem_parts[0] == "DA":
                 telem_structure["DS2438"] = {
                     "temp": ctelem_parts[1],
@@ -180,6 +206,11 @@ class TelemetryParser(object):
                 }
         return telem_structure
 
+    def get_exp_ina_name(address):
+        if address == 64:
+            return "Panel 1"
+        if address == 67:
+            return "Panel 2"
 
     def parse_exp_telem(self, telem):
         telem_structure = {
@@ -199,6 +230,7 @@ class TelemetryParser(object):
                 telem_structure["THERM_PWR"]["P2"] = ctelem_parts[1]
             if ctelem_parts[0] == "I":
                 ina_telem = {
+                    "name": get_exp_ina_name(ctelem_parts[1]),
                     "address": ctelem_parts[1],
                     "shunt_V": ctelem_parts[2],
                     "bus_V": ctelem_parts[3],

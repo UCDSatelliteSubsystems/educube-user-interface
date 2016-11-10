@@ -31,8 +31,9 @@ class EducubeConnection(Thread):
 
     def __init__(self, 
         conn_type, port, board,
-        baud=9600, output_path=None,
-        read_interval_s=30,
+        baud=9600, fake=False,
+        output_path=None,
+        read_interval_s=5,
         telem_request_interval_s=5):
         ''' Constructor '''
         Thread.__init__(self)
@@ -59,18 +60,6 @@ class EducubeConnection(Thread):
         self.running = True
         logger.info("Telemetry will be stored to %s" % self.output_path)
     
-    def  _start_serial_conn(self):
-        self.connection = serial.Serial(
-            self.port, self.baud, timeout=3
-        )
-
-    def  _start_xbee_conn(self):
-        pass
-
-    def _write(self, bytes):
-        if self.conn_type == "serial":
-            self.connection.write(bytes)
-
     def _read_telem_serial(self):
         while self.connection.inWaiting() > 0:
             logger.debug("EduCube connection has data")
@@ -90,17 +79,19 @@ class EducubeConnection(Thread):
             self.send_command(command)
 
     def setup_connection(self):
+        logger.info("Setting up connection")
         self.output_file = open(self.output_path, 'a')
-        if self.conn_type == "serial":
-            self._start_serial_conn()
-        if self.conn_type == "xbee":
-            self._start_xbee_conn()
+        self.connection = serial.Serial(
+            self.port, self.baud, timeout=3
+        )
     
     def run(self):
         while self.running:
             self.read_telem()
             self.request_telem()
-            time.sleep(self.read_interval_s)
+            for i in range(int(self.read_interval_s/.5)):
+                if self.running:
+                    time.sleep(.5)
         self.close_connections()
         logger.info("Stopped")
 
@@ -128,7 +119,8 @@ class EducubeConnection(Thread):
             command=command
         )
         logger.info("Writing command: '%s' (%s)" % (command, command_structure))
-        self._write(command_structure)
+        self.connection.write(command_structure)
+        self.connection.flush()
  
     def write_buffer_to_log(self):
         for telem in self.telemetry_buffer:
@@ -149,6 +141,18 @@ class EducubeConnection(Thread):
         self.running = False
  
 
+class FakeEducubeConnection(EducubeConnection):
+
+    def setup_connection(self):
+        self.output_file = open(self.output_path, 'a')
+        fd, filename = tempfile.mkstemp()
+        self.connection = os.fdopen(fd, "w")
+        logger.debug("Using fake serial connection to: %s" % filename)
+
+    def read_telem(self):
+        logger.info("Fake connection: ignoring telem request")
+
+
 def shutdown_all_connections():
     for conn in connections:
         conn.shutdown()
@@ -158,12 +162,20 @@ def shutdown_all_connections():
 def get_connection(connection):
     global connections
     logger.info("Starting educube connection")
-    educube_connection = EducubeConnection(
-        connection['type'],
-        connection['port'],
-        connection['board'],
-        baud=connection['baud']
-    )
+    if connection['fake']:
+        educube_connection = FakeEducubeConnection(
+            connection['type'],
+            connection['port'],
+            connection['board'],
+            baud=connection['baud']
+        )
+    else:
+        educube_connection = EducubeConnection(
+            connection['type'],
+            connection['port'],
+            connection['board'],
+            baud=connection['baud'],
+        )
     educube_connection.start()
     connections.append(educube_connection)
     return educube_connection
