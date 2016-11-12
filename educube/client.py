@@ -46,7 +46,7 @@ class EduCubeCLI(click.MultiCommand):
         if ns_cli:
             return ns_cli 
         else:
-            print "The '%s' command does not exist, please choose one of: %s" % (name, self.list_commands(ctx))
+            print("The '%s' command does not exist, please choose one of: %s" % (name, self.list_commands(ctx)))
             sys.exit(0)
 
 

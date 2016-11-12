@@ -47,9 +47,9 @@ def start(ctx):
             process_command(cmd_name, educube_connection)
             click.pause()
     except KeyboardInterrupt:
-        print "Exiting.."
+        print("Exiting..")
     except click.Abort as e:
-        print "Exiting.."
+        print("Exiting..")
     except Exception:
         logger.exception("Unexpected error!")
     educonn.shutdown_all_connections()
@@ -96,10 +96,10 @@ def show_menu():
         command_table.append([
             cmd_name, command.__doc__
         ])
-    print tabulate(command_table, 
+    print(tabulate(command_table,
         headers=["Command name","Description"], 
         tablefmt="fancy_grid"
-    )
+    ))
 
 
 def read_command():

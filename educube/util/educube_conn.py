@@ -13,17 +13,17 @@ connections = []
 
 class EducubeConnection(Thread):
     
-    syntax_command_start = b'['
-    syntax_command_end = b']'
-    syntax_command = b'C'
-    syntax_sep = b'|'
+    syntax_command_start = '['
+    syntax_command_end = ']'
+    syntax_command = 'C'
+    syntax_sep = '|'
 
-    board_id_EPS = b'EPS'
-    board_id_CDH = b'CDH'
-    board_id_EXP = b'EXP'
-    board_id_ADC = b'ADC'
+    board_id_EPS = 'EPS'
+    board_id_CDH = 'CDH'
+    board_id_EXP = 'EXP'
+    board_id_ADC = 'ADC'
 
-    telem_request_command = b'T'
+    telem_request_command = 'T'
 
     last_telem_request = 0
     telemetry_buffer = []
@@ -43,9 +43,7 @@ class EducubeConnection(Thread):
         self.board_id = board
         self.timeout=.5
 
-        assert(conn_type in ['serial'])
-        assert(board in [self.board_id_EPS, self.board_id_CDH, 
-            self.board_id_EXP, self.board_id_ADC])
+        assert(board in [self.board_id_EPS, self.board_id_CDH, self.board_id_EXP, self.board_id_ADC])
 
         if output_path:
             self.output_path = output_path
@@ -60,16 +58,13 @@ class EducubeConnection(Thread):
         self.running = True
         logger.info("Telemetry will be stored to %s" % self.output_path)
     
-    def _read_telem_serial(self):
+    def read_telem(self):
         while self.connection.inWaiting() > 0:
             logger.debug("EduCube connection has data")
             telem_data = self.connection.readline().strip()
             telem = {"time": time.time() * 1000, "data": telem_data}
             self.telemetry_buffer.append(telem)
             logger.debug("Received telemetry: %s" % telem)
-
-    def read_telem(self):
-        self._read_telem_serial()
 
     def request_telem(self,):
         if (time.time() - self.last_telem_request) > self.telem_request_interval_s:
@@ -105,21 +100,21 @@ class EducubeConnection(Thread):
             board=self.board_id
             
         formatted_command = '{command_start}{sep}{board}{sep}{command}'.format(
-            command_start=self.syntax_command,
-            sep=self.syntax_sep,
-            board=board,
-            command=cmd
+            command_start=str(self.syntax_command),
+            sep=str(self.syntax_sep),
+            board=str(board),
+            command=str(cmd)
         )
         return formatted_command
 
     def send_command(self, command):
         command_structure = '{command_start}{command}{command_end}'.format(
-            command_start=self.syntax_command_start,
-            command_end=self.syntax_command_end,
-            command=command
+            command_start=str(self.syntax_command_start),
+            command_end=str(self.syntax_command_end),
+            command=str(command)
         )
         logger.info("Writing command: '%s' (%s)" % (command, command_structure))
-        self.connection.write(command_structure)
+        self.connection.write(str.encode(command_structure))
         self.connection.flush()
  
     def write_buffer_to_log(self):

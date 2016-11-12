@@ -58,16 +58,16 @@ class MainHandler(tornado.web.RequestHandler):
 class ClientSocket(websocket.WebSocketHandler):
     def open(self):
         GLOBALS['sockets'].append(self)
-        print "WebSocket opened"
+        print("WebSocket opened")
 
     def on_message(self, message):
-        print "Message received: %s" % message
+        print("Message received: %s" % message)
         if message.startswith("C|"):
             send_command(message)
         # self.write_message(u"You said: " + message)
         
     def on_close(self):
-        print "WebSocket closed"
+        print("WebSocket closed")
         GLOBALS['sockets'].remove(self)
 
 
@@ -95,7 +95,7 @@ def call_board_updates():
     for telem in telemetry_packets:
         try:
             telemetry = parser.parse_telemetry(telem)
-            print display.display_color_json(telemetry)
+            print(display.display_color_json(telemetry))
             ws_send(json.dumps(telemetry))
         except Exception as e:
             logger.exception("Telemetry badly formed: %s\n%s" % (telem, e))
@@ -124,7 +124,7 @@ def start_webserver(connection):
     tornado.autoreload.add_reload_hook( # shutdown serial when reloading
         educonn.shutdown_all_connections
     )
-    print "Visit your browser at http://localhost:%s" % PORT
+    print("Visit your browser at http://localhost:%s" % PORT)
     try:
         tornado.ioloop.IOLoop.instance().start()
     except KeyboardInterrupt:

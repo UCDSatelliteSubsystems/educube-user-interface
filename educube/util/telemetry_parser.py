@@ -33,7 +33,7 @@ class TelemetryParser(object):
 
     def parse_telemetry(self, telem):
         logger.info("Parsing telemetry")
-        telem_parts = telem['data'].split("|")
+        telem_parts = telem['data'].decode('utf8').split("|")
         if len(telem_parts) < 3:
             logger.warning("Empty telemetry")
             return
@@ -56,7 +56,7 @@ class TelemetryParser(object):
                         logger.error("Wrong parser defined for %s board: %s" % (bname, board['parser']))
         return telem_struct
 
-    def get_ina_name(address):
+    def get_ina_name(self, address):
         if address == 66:
             return "VBatt"
         if address == 67:
@@ -90,13 +90,14 @@ class TelemetryParser(object):
             ctelem_parts = chip_telem.split(",")
             if ctelem_parts[0] == "I":
                 ina_telem = {
-                    "name": get_ina_name(ctelem_parts[1]),
+                    "name": self.get_ina_name(int(ctelem_parts[1])),
                     "address": ctelem_parts[1],
                     "shunt_V": ctelem_parts[2],
                     "bus_V": ctelem_parts[3],
-                    "current_mA": ctelem_parts[4]
+                    "current_mA": ctelem_parts[4],
+                    "power_mW": (float(ctelem_parts[3])*float(ctelem_parts[4])),
                 }
-                if ina_telem['shunt_V'] >0 and ina_telem['current_mA'] >0:
+                if float(ina_telem['shunt_V']) > 0 and float(ina_telem['current_mA']) > 0:
                     telem_structure["INA"].append(ina_telem)
                 else:
                     logger.warning("Ommitting bad INA readings: %s" % ina_telem)
@@ -174,7 +175,7 @@ class TelemetryParser(object):
                     }
         return telem_structure
 
-    def _degmin_to_deg(degmin):
+    def _degmin_to_deg(self, degmin):
         str_val = "%s" % degmin
         point_loc = str_val.find(".")
         deg_part = float(str_val[0:point_loc-2])
@@ -197,8 +198,8 @@ class TelemetryParser(object):
                     "LON": ctelem_parts[3],
                 }
                 telem_structure["GPS_FIX"] = {
-                    "LAT": _degmin_to_deg(ctelem_parts[2]),
-                    "LON": _degmin_to_deg(ctelem_parts[3]),
+                    "LAT": self._degmin_to_deg(ctelem_parts[2]),
+                    "LON": self._degmin_to_deg(ctelem_parts[3]),
                 }
                 telem_structure["GPS_META"] = {
                     "HDOP": ctelem_parts[4],
@@ -206,7 +207,7 @@ class TelemetryParser(object):
                 }
         return telem_structure
 
-    def get_exp_ina_name(address):
+    def get_exp_ina_name(self, address):
         if address == 64:
             return "Panel 1"
         if address == 67:
@@ -230,7 +231,7 @@ class TelemetryParser(object):
                 telem_structure["THERM_PWR"]["P2"] = ctelem_parts[1]
             if ctelem_parts[0] == "I":
                 ina_telem = {
-                    "name": get_exp_ina_name(ctelem_parts[1]),
+                    "name": self.get_exp_ina_name(int(ctelem_parts[1])),
                     "address": ctelem_parts[1],
                     "shunt_V": ctelem_parts[2],
                     "bus_V": ctelem_parts[3],

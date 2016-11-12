@@ -2,7 +2,6 @@ import json
 import click
 from pygments import highlight, lexers, formatters
 
-
 def _pop_safe(dictobj, key):
     if key in dictobj.keys():
         dictobj.pop(key)
@@ -30,7 +29,7 @@ def get_standalone_mode():
 
 def display_color_json(json_obj):
     formatted_json = json.dumps(json_obj, sort_keys=True, indent=4)
-    colorful_json = highlight(unicode(formatted_json, 'UTF-8'), lexers.JsonLexer(), formatters.TerminalFormatter())
+    colorful_json = highlight(str(formatted_json).encode(), lexers.JsonLexer(), formatters.TerminalFormatter())
     return colorful_json
 
 
