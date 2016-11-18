@@ -5,8 +5,8 @@ def readme():
         return f.read()
 
 setup(name='educube',
-      version='0.5.5',
-      download_url='https://github.com/ezeakeal/educube_client/tarball/0.5.5',
+      version='0.5.6',
+      download_url='https://github.com/ezeakeal/educube_client/tarball/0.5.6',
       keywords=['educube'],
       description='EduCube Client',
       long_description=readme(),
@@ -23,7 +23,6 @@ setup(name='educube',
         'requests',
         'tabulate',
         'tornado',
-        'webbrowser',
       ],
       tests_require=[
         'nose',
