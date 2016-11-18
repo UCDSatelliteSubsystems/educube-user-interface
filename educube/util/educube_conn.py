@@ -114,8 +114,11 @@ class EducubeConnection(Thread):
             command=str(command)
         )
         logger.info("Writing command: '%s' (%s)" % (command, command_structure))
-        self.connection.write(str.encode(command_structure))
-        self.connection.flush()
+        try:
+            self.connection.write(str.encode(command_structure))
+            self.connection.flush()
+        except:
+            logger.exception("Error sending data")
  
     def write_buffer_to_log(self):
         for telem in self.telemetry_buffer:

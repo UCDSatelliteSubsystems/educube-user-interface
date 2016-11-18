@@ -4,10 +4,10 @@
           <div class="panel-heading">EPS Commands</div>
           <div class="panel-body">
             
-            <div class="col-sm-5">
+            <div class="col-sm-4">
                 <div class="input-group">
                     <span class="input-group-addon">Enable Pin</span>
-                    <select class="form-control feed_educube_action"  data-actionsel="#pin_on_select" data-cmdbefore="PIN_ON|" data-cmdafter="">
+                    <select class="form-control feed_educube_action"  data-actionsel="#pin_on_select" data-cmdbefore="PWR_ON|" data-cmdafter="">
                         <option value="R">Radio</option>
                         <option value="1">SW1</option>
                         <option value="2">SW2</option>
@@ -19,10 +19,10 @@
                 </div>
             </div>
 
-            <div class="col-sm-5">
+            <div class="col-sm-4">
                 <div class="input-group">
                     <span class="input-group-addon">Disable Pin</span>
-                    <select class="form-control feed_educube_action"  data-actionsel="#pin_off_select" data-cmdbefore="PIN_OFF|" data-cmdafter="">
+                    <select class="form-control feed_educube_action"  data-actionsel="#pin_off_select" data-cmdbefore="PWR_OFF|" data-cmdafter="">
                         <option value="R">Radio</option>
                         <option value="1">SW1</option>
                         <option value="2">SW2</option>
@@ -33,9 +33,10 @@
                     </span>
                 </div>
             </div>
-            <div class="col-md-2">
+            <div class="col-md-4">
             |
-              <button data-board="CDH" data-cmd="OP" class="educube_action btn btn-warning"><abbr title="Toggle Operational Mode">Op Mode</abbr></button>
+              <button data-board="CDH" data-cmd="OP" class="educube_action btn btn-sm btn-warning"><abbr title="Toggle Operational Mode">Op Mode</abbr></button>
+              <button data-board="EPS" data-cmd="T" class="educube_action btn btn-sm btn-info pull-right">Request Telemetry</button>
             </div>
             
           </div>
@@ -75,7 +76,7 @@
             <h3>Device Charging: ${CHARGING}</h3>
         </div>
         <div class="row">
-            <h3>Main Battery</h3>
+            <h3>EduCube Battery</h3>
             <div class="col-sm-6 ow-block">
                 <dl class="dl-horizontal">
                     <dt>Voltage</dt><dd><span class="label label-primary">${DS2438.voltage} V</span></dd>
@@ -84,10 +85,9 @@
             </div>
             <div class="col-sm-6 ow-block">
                 <dl class="dl-horizontal">
-                    <dt>Temp</dt><dd><span class="label label-primary">${DS2438.temp} C</span></dd>
-                    <dt>Temp A</dt>
+                    <dt>Temp (Battery 1)</dt>
                     <dd><span class="label label-primary">${DS18B20_A.temp} C</span></dd>
-                    <dt>Temp B</dt>
+                    <dt>Temp (Battery 2)</dt>
                     <dd><span class="label label-primary">${DS18B20_B.temp} C</span></dd>
                 </dl>
             </div>
@@ -103,6 +103,7 @@
                         <th>Bus (V)</th>
                         <th>Current (mA)</th>
                         <th>Power (mW)</th>
+                        <th>Control</th>
                     </tr>
                 </thead>
 
@@ -113,6 +114,14 @@
                         <td>${bus_V}</td>
                         <td>${current_mA}</td>
                         <td>${power_mW}</td>
+                        <td>
+                        {{!if command_id}}
+                            <button data-board="EPS" data-cmd="PWR_ON|${command_id}" class="educube_action btn btn-xs btn-success">ON</button>
+                            <button data-board="EPS" data-cmd="PWR_OFF|${command_id}" class="educube_action btn btn-xs btn-danger">OFF</button>
+                        {{!else}}
+                            <span class="label label-default">N/A</span>
+                        {{!/if}}
+                        </td>
                     </tr>
                 {{!/each}}
                 </tbody>

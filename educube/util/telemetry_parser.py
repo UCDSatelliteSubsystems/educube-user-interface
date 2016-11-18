@@ -57,6 +57,10 @@ class TelemetryParser(object):
         return telem_struct
 
     def get_ina_name(self, address):
+        if address == 64:
+            return "Solar"
+        if address == 65:
+            return "Charger"
         if address == 66:
             return "VBatt"
         if address == 67:
@@ -78,6 +82,16 @@ class TelemetryParser(object):
         if address == 75:
             return "SW3-3V"
 
+    def get_command_id_for_eps_ina(self, address):
+        if address == 68:
+            return "R"
+        if address in [69, 72]:
+            return "1"
+        if address in [70, 74]:
+            return "2"
+        if address in [71, 75]:
+            return "3"
+
     def parse_eps_telem(self, telem):
         telem_structure = {
             "INA": [],
@@ -95,12 +109,11 @@ class TelemetryParser(object):
                     "shunt_V": ctelem_parts[2],
                     "bus_V": ctelem_parts[3],
                     "current_mA": ctelem_parts[4],
-                    "power_mW": (float(ctelem_parts[3])*float(ctelem_parts[4])),
+                    "power_mW": "%.2f" % (float(ctelem_parts[3])*float(ctelem_parts[4])),
+                    "command_id": self.get_command_id_for_eps_ina(int(ctelem_parts[1]))
                 }
-                if float(ina_telem['shunt_V']) > 0 and float(ina_telem['current_mA']) > 0:
-                    telem_structure["INA"].append(ina_telem)
-                else:
-                    logger.warning("Ommitting bad INA readings: %s" % ina_telem)
+                telem_structure["INA"].append(ina_telem)
+
             if ctelem_parts[0] == "DA":
                 telem_structure["DS2438"] = {
                     "temp": ctelem_parts[1],
@@ -198,8 +211,8 @@ class TelemetryParser(object):
                     "LON": ctelem_parts[3],
                 }
                 telem_structure["GPS_FIX"] = {
-                    "LAT": self._degmin_to_deg(ctelem_parts[2]),
-                    "LON": self._degmin_to_deg(ctelem_parts[3]),
+                    "LAT": float(ctelem_parts[2])/10000000.,
+                    "LON": float(ctelem_parts[3])/10000000.,
                 }
                 telem_structure["GPS_META"] = {
                     "HDOP": ctelem_parts[4],
@@ -235,7 +248,8 @@ class TelemetryParser(object):
                     "address": ctelem_parts[1],
                     "shunt_V": ctelem_parts[2],
                     "bus_V": ctelem_parts[3],
-                    "current_mA": ctelem_parts[4]
+                    "current_mA": ctelem_parts[4],
+                    "power_mW": "%.2f" % (ctelem_parts[4] * ctelem_parts[3]),
                 }
                 telem_structure["INA"].append(ina_telem)
             if ctelem_parts[0] == "P1A":

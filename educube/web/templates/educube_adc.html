@@ -1,20 +1,20 @@
+<link href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/6.2.0/jquery.nouislider.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/6.2.0/jquery.nouislider.min.js"></script>
+
 <div class="tab-pane fade" id="board_adc">
     <div class="col-sm-12">
         <div class="panel panel-primary">
           <div class="panel-heading">ADC Commands</div>
           <div class="panel-body">
             
-            <div class="col-sm-5">
-              <div class="input-group">
-                  <span class="input-group-addon">Reaction Wheel Power</span>
-                  <input type="number" class="form-control feed_educube_action feed_switch_sign_before" data-actionsel="#wheelspd" data-cmdbefore="REACT|" data-cmdafter="" min="-100" max="100">
-                  <span class="input-group-btn">
-                      <button id="wheelspd" type="button" data-board="ADC" data-cmd="" class="educube_action btn btn-default">Submit</button>
-                  </span>
-              </div>
+            <div class="col-sm-12 col-md-4">
+                <div class="input-group">
+                    <label for="outfile">Wheel Power (<span id="spdtxt">0</span>%)</label>
+                    <div id="spdslider"></div>
+                </div>
             </div>
 
-            <div class="col-sm-7">
+            <div class="col-sm-8 col-md-6">
               MagTorquers:
               <button data-board="ADC" data-cmd="MAG|X|+" class="educube_action btn btn-sm btn-success">X+</button>
               <button data-board="ADC" data-cmd="MAG|X|0" class="educube_action btn btn-sm btn-default">Off</button>
@@ -23,6 +23,10 @@
               <button data-board="ADC" data-cmd="MAG|Y|+" class="educube_action btn btn-sm btn-success">Y+</button>
               <button data-board="ADC" data-cmd="MAG|Y|0" class="educube_action btn btn-sm btn-default">Off</button>
               <button data-board="ADC" data-cmd="MAG|Y|-" class="educube_action btn btn-sm btn-danger">Y-</button>
+            </div>
+
+            <div class="col-sm-4 col-md-2">
+              <button data-board="ADC" data-cmd="T" class="educube_action btn btn-sm btn-info btn-block pull-right">Request Telemetry</button>
             </div>
 
           </div>
@@ -34,6 +38,35 @@
         </div>
     </div>
 </div>
+
+
+<script>
+$(document).ready(function(){
+  $(function() {                        
+    $("#spdslider").noUiSlider({
+        handles: 1,
+        start:[0],
+        step: 5,
+        range: {
+            'min': -100,
+            'max': 100
+        }
+    }).on('set', function( event, speedval ) {
+        var speed = Math.round(speedval)
+        var sign = "+";
+        if (speed < 0) 
+            sign = "-"
+        var cmdstring = "C|ADC|REACT|"+sign+"|"+Math.abs(speed) ;
+        websocket.send(cmdstring);
+        provide_notice({"message": "Command sent ("+cmdstring+")", "type": "success"});
+    }).on('slide', function( event, speedval ) {
+        var speed = Math.round(speedval)
+        $("#spdtxt").text(speed);
+    });
+    
+  });
+});
+</script>
 
 
 
@@ -96,11 +129,11 @@
             <div class="col-sm-4 ina-block">
                 <div class="panel panel-info">
                     <div class="panel-heading">
-                        <h4 class="panel-title">MPU</h3>
+                        <h4 class="panel-title">IMU</h3>
                     </div>
                     <div class="panel-body">
                         <dl>
-                            <dt>Acceleration (mg)</dt>
+                            <dt>Acceleration (milli G-force)</dt>
                             <dd>
                                 <p>X <span class="label label-info">${MPU_ACC.X}</span></p>
                                 <p>Y <span class="label label-info">${MPU_ACC.Y}</span></p>
@@ -112,7 +145,7 @@
                                 <p>Y <span class="label label-info">${MPU_GYR.Y}</span></p>
                                 <p>Z <span class="label label-info">${MPU_GYR.Z}</span></p>
                             </dd>
-                            <dt>Magnetic (mG)</dt>
+                            <dt>Magnetic (milli Gauss)</dt>
                             <dd>
                                 <p>X <span class="label label-info">${MPU_MAG.X}</span></p>
                                 <p>Y <span class="label label-info">${MPU_MAG.Y}</span></p>

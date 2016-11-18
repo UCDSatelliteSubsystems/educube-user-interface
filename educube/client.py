@@ -5,8 +5,8 @@ import json
 import click
 import serial
 import logging.config
-# import educube.util.display as display
-# import educube.util.api_manager as api_manager
+
+from educube.web import server as webserver
 
 import logging
 logger = logging.getLogger(__name__)
@@ -24,33 +24,6 @@ def configure_logging(verbose):
     logging.basicConfig(level=loglevels[verbose])
 
 
-class EduCubeCLI(click.MultiCommand):
-
-    def list_commands(self, ctx):
-        commands = []
-        for filename in os.listdir(plugin_folder):
-            if filename.endswith('.py') and not filename.startswith("__init__") and not filename.startswith("cmd"):
-                commands.append(filename[:-3])
-        commands = sorted(set(commands))
-        return commands
-
-    def get_command(self, ctx, name):
-        ns = {}
-        ns_cli = None
-        fn = os.path.join(plugin_folder, name + '.py')
-        if os.path.exists(fn):
-            with open(fn) as f:
-                code = compile(f.read(), fn, 'exec')
-                eval(code, ns, ns)
-            ns_cli = ns['cli']
-        if ns_cli:
-            return ns_cli 
-        else:
-            print("The '%s' command does not exist, please choose one of: %s" % (name, self.list_commands(ctx)))
-            sys.exit(0)
-
-
-
 def verify_serial_connection(port, baud):
     try:
         ser = serial.Serial(port, baud, timeout=1)
@@ -63,30 +36,33 @@ def verify_serial_connection(port, baud):
     except serial.serialutil.SerialException as e:
         raise click.BadParameter("Serial not readable: %s" % e)
 
+##############################
+# COMMANDS
+##############################
 
-@click.command(cls=EduCubeCLI)
-@click.argument('serial')
+@click.group()
 @click.option('-v', '--verbose', count=True)
-@click.option('-b', '--baud', default=9600)
+@click.pass_context
+def cli(ctx, verbose):
+    configure_logging(verbose)
+
+
+@cli.command()
+@click.option('-s', '--serial', prompt=True)
+@click.option('-b', '--baud', default=9600, prompt=True)
 @click.option('-e', '--board', default='CDH')
 @click.option('--fake', is_flag=True, default=False, help="Fake the serial")
 @click.option('--json', is_flag=True, default=False, help="Outputs mostly JSON instead")
 @click.pass_context
-def cli(ctx, serial, baud, board, fake, json, verbose):
+def start(ctx, serial, baud, board, fake, json):
     """
-    EduCube
-
-    This software provides both the command line and web interface
-    to the EduCube toolkit.
-
+    Starts the EduCube web interface
     """
-    configure_logging(verbose)
     logger.debug("""Running with settings:
-        Verbosity: %s
         Serial: %s
         Baudrate: %s
         EduCube board: %s
-    """ % (verbose, serial, baud, board))
+    """ % (serial, baud, board))
 
     ctx.obj['connection'] = {
         "type": "serial",
@@ -98,9 +74,13 @@ def cli(ctx, serial, baud, board, fake, json, verbose):
     if not fake:
         verify_serial_connection(serial, baud)
 
+    webserver.start_webserver(
+        connection=ctx.obj.get('connection')
+    )
+
 
 def main():
-    cli(obj={}, standalone_mode=False)
+    cli(obj={})
 
 if __name__ == '__main__':
     main()

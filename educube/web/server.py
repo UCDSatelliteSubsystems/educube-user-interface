@@ -1,7 +1,10 @@
 import os
 import json
+import time
+import webbrowser
 import tornado.web
 import tornado.ioloop
+import tornado.httpserver
 from tornado import websocket
 
 from educube.util import display as display
@@ -64,7 +67,9 @@ class ClientSocket(websocket.WebSocketHandler):
         print("Message received: %s" % message)
         if message.startswith("C|"):
             send_command(message)
-        # self.write_message(u"You said: " + message)
+            if not message.endswith("|T"):
+                time.sleep(0.1) # some delay
+                send_command("C|CDH|T") # Force telem request
         
     def on_close(self):
         print("WebSocket closed")
@@ -74,13 +79,6 @@ class ClientSocket(websocket.WebSocketHandler):
 ##########################
 # WebSocket Handlers
 ##########################
-# class HandleCommand(tornado.web.RequestHandler):
-#     def get(self, *args, **kwargs):
-#         data = self.get_argument('data')
-#         for socket in GLOBALS['sockets']:
-#             socket.write_message(data)
-#         self.write('Posted')
-
 def ws_send(data):
     for socket in GLOBALS['sockets']:
         socket.write_message(data)
@@ -124,7 +122,9 @@ def start_webserver(connection):
     tornado.autoreload.add_reload_hook( # shutdown serial when reloading
         educonn.shutdown_all_connections
     )
-    print("Visit your browser at http://localhost:%s" % PORT)
+    edu_url = "http://localhost:%s" % PORT
+    print("Visit your browser at %s" % edu_url)
+    webbrowser.open_new(edu_url)
     try:
         tornado.ioloop.IOLoop.instance().start()
     except KeyboardInterrupt:
