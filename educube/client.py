@@ -4,6 +4,8 @@ import sys
 import json
 import click
 import serial
+import pkg_resources
+import serial.tools.list_ports
 import logging.config
 
 from educube.web import server as webserver
@@ -40,24 +42,42 @@ def verify_serial_connection(port, baud):
 # COMMANDS
 ##############################
 
+def get_serial():
+    ports = serial.tools.list_ports.comports()
+    suggested_educube_port = ports[-1]
+    return suggested_educube_port.device
+
+def get_baud():
+    ports = serial.tools.list_ports.comports()
+    suggested_educube_port = ports[-1]
+    if suggested_educube_port.description == 'BASE':
+        return 9600
+    else:
+        return 115200
+
+
 @click.group()
 @click.option('-v', '--verbose', count=True)
 @click.pass_context
 def cli(ctx, verbose):
+    """Educube Client"""
     configure_logging(verbose)
 
+@cli.command()
+def version():
+    """Prints the EduCube client version"""
+    print(pkg_resources.require("educube")[0].version)
 
 @cli.command()
-@click.option('-s', '--serial', prompt=True)
-@click.option('-b', '--baud', default=9600, prompt=True)
+@click.option('-s', '--serial', default=get_serial, prompt=True)
+@click.option('-b', '--baud', default=get_baud, prompt=True)
 @click.option('-e', '--board', default='CDH')
 @click.option('--fake', is_flag=True, default=False, help="Fake the serial")
 @click.option('--json', is_flag=True, default=False, help="Outputs mostly JSON instead")
 @click.pass_context
 def start(ctx, serial, baud, board, fake, json):
-    """
-    Starts the EduCube web interface
-    """
+    """Starts the EduCube web interface""" 
+
     logger.debug("""Running with settings:
         Serial: %s
         Baudrate: %s

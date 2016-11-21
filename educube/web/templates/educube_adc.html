@@ -16,13 +16,13 @@
 
             <div class="col-sm-8 col-md-6">
               MagTorquers:
-              <button data-board="ADC" data-cmd="MAG|X|+" class="educube_action btn btn-sm btn-success">X+</button>
-              <button data-board="ADC" data-cmd="MAG|X|0" class="educube_action btn btn-sm btn-default">Off</button>
               <button data-board="ADC" data-cmd="MAG|X|-" class="educube_action btn btn-sm btn-danger">X-</button>
+              <button data-board="ADC" data-cmd="MAG|X|0" class="educube_action btn btn-sm btn-default">Off</button>
+              <button data-board="ADC" data-cmd="MAG|X|+" class="educube_action btn btn-sm btn-success">X+</button>
               |
-              <button data-board="ADC" data-cmd="MAG|Y|+" class="educube_action btn btn-sm btn-success">Y+</button>
-              <button data-board="ADC" data-cmd="MAG|Y|0" class="educube_action btn btn-sm btn-default">Off</button>
               <button data-board="ADC" data-cmd="MAG|Y|-" class="educube_action btn btn-sm btn-danger">Y-</button>
+              <button data-board="ADC" data-cmd="MAG|Y|0" class="educube_action btn btn-sm btn-default">Off</button>
+              <button data-board="ADC" data-cmd="MAG|Y|+" class="educube_action btn btn-sm btn-success">Y+</button>
             </div>
 
             <div class="col-sm-4 col-md-2">
@@ -93,10 +93,10 @@ $(document).ready(function(){
                             </dd>
                             <dt>Y axis</dt>
                             <dd>
-                                {{!if MAGNO_TORQ.X_P == 0 }}
-                                  <span class="label label-warning">Enabled (X+)</span>
-                                {{!else MAGNO_TORQ.X_N == 0}}
-                                  <span class="label label-warning">Enabled (X-)</span>
+                                {{!if MAGNO_TORQ.Y_P == 0 }}
+                                  <span class="label label-warning">Enabled (Y+)</span>
+                                {{!else MAGNO_TORQ.Y_N == 0}}
+                                  <span class="label label-warning">Enabled (Y-)</span>
                                 {{!else}}
                                   <span class="label label-default">Disabled</span>
                                 {{!/if}}

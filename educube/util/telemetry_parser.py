@@ -106,14 +106,13 @@ class TelemetryParser(object):
                 ina_telem = {
                     "name": self.get_ina_name(int(ctelem_parts[1])),
                     "address": ctelem_parts[1],
-                    "shunt_V": ctelem_parts[2],
-                    "bus_V": ctelem_parts[3],
-                    "current_mA": ctelem_parts[4],
-                    "power_mW": "%.2f" % (float(ctelem_parts[3])*float(ctelem_parts[4])),
+                    "bus_V": ctelem_parts[2],
+                    "current_mA": ctelem_parts[3],
+                    "switch_enabled": 1,
+                    "power_mW": "%.2f" % (float(ctelem_parts[2])*float(ctelem_parts[3])),
                     "command_id": self.get_command_id_for_eps_ina(int(ctelem_parts[1]))
                 }
                 telem_structure["INA"].append(ina_telem)
-
             if ctelem_parts[0] == "DA":
                 telem_structure["DS2438"] = {
                     "temp": ctelem_parts[1],
@@ -130,6 +129,33 @@ class TelemetryParser(object):
                 }
             if ctelem_parts[0] == "C":
                 telem_structure["CHARGING"] = (ctelem_parts[1] == 1)
+
+        # Now we go back over the telemetry to add in the status of the INA switches
+        # We can't do it in the same loop in case (somehow) the switch state comes before the switch power telemtry
+
+        def add_ina_switch_state(ina_name, switch_state):
+            address_ids = []
+            if ina_name == "R":
+                address_ids = [68]
+            if ina_name == "1":
+                address_ids = [69, 72]
+            if ina_name == "2":
+                address_ids = [70, 74]
+            if ina_name == "3":
+                address_ids = [71, 75]
+            for ina_telem in telem_structure["INA"]:
+                if int(ina_telem['address']) in address_ids:
+                    ina_telem['switch_enabled'] = int(switch_state)
+
+        for chip_telem in telem:
+            ctelem_parts = chip_telem.split(",")
+            # Skip all telem not 'I_E'    
+            if ctelem_parts[0] != "I_E":
+                continue
+            add_ina_switch_state("R", ctelem_parts[1])
+            add_ina_switch_state("1", ctelem_parts[2])
+            add_ina_switch_state("2", ctelem_parts[3])
+            add_ina_switch_state("3", ctelem_parts[4])
         return telem_structure
 
 
@@ -165,7 +191,7 @@ class TelemetryParser(object):
                     "Y_N": ctelem_parts[4]
                 }
             # Handle reaction wheel data
-            if ctelem_parts[0] == "ANG":
+            if ctelem_parts[0] == "WHL":
                 telem_structure["REACT_WHEEL"] = ctelem_parts[1]
             if ctelem_parts[0] == "MPU":
                 if ctelem_parts[1] == "ACC":
@@ -200,6 +226,8 @@ class TelemetryParser(object):
             "GPS_DATE": None,
             "GPS_FIX": {},
             "GPS_META": {},
+            "SEPARATION": {},
+            "HOT_PLUG": {}
         }
         for chip_telem in telem:
             ctelem_parts = chip_telem.split(",")
@@ -217,7 +245,30 @@ class TelemetryParser(object):
                 telem_structure["GPS_META"] = {
                     "HDOP": ctelem_parts[4],
                     "ALT_CM": ctelem_parts[5],
+                    "STATUS_INT": ctelem_parts[6],
+                    "STATUS": "No Fix"
                 }
+                stat_int = int(telem_structure["GPS_META"]["STATUS_INT"])
+                if stat_int == 1:
+                    telem_structure["GPS_META"]["STATUS"] = "EST"
+                elif stat_int == 2:
+                    telem_structure["GPS_META"]["STATUS"] = "Time only"
+                elif stat_int == 3:
+                    telem_structure["GPS_META"]["STATUS"] = "STD"
+                elif stat_int == 4:
+                    telem_structure["GPS_META"]["STATUS"] = "DGPS"
+            if ctelem_parts[0] == "SEP":
+                telem_structure["SEPARATION"]["ID"] = ctelem_parts[1]
+                if ctelem_parts[1] == 0:
+                    telem_structure["SEPARATION"]["VAL"] = "Switch Missing"
+                if ctelem_parts[1] == 1:
+                    telem_structure["SEPARATION"]["VAL"] = "Separated"
+                if ctelem_parts[1] == 2:
+                    telem_structure["SEPARATION"]["VAL"] = "In Launch Adapter"
+                telem_structure["HOT_PLUG"]["ADC"] = ctelem_parts[2]
+                telem_structure["HOT_PLUG"]["COMM"] = ctelem_parts[3]
+                telem_structure["HOT_PLUG"]["EXP1"] = ctelem_parts[4]
+                telem_structure["HOT_PLUG"]["SPARE"] = ctelem_parts[5]
         return telem_structure
 
     def get_exp_ina_name(self, address):
@@ -249,7 +300,7 @@ class TelemetryParser(object):
                     "shunt_V": ctelem_parts[2],
                     "bus_V": ctelem_parts[3],
                     "current_mA": ctelem_parts[4],
-                    "power_mW": "%.2f" % (ctelem_parts[4] * ctelem_parts[3]),
+                    "power_mW": "%.2f" % (float(ctelem_parts[4]) * float(ctelem_parts[3])),
                 }
                 telem_structure["INA"].append(ina_telem)
             if ctelem_parts[0] == "P1A":

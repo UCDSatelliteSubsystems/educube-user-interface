@@ -48,9 +48,10 @@ class EducubeConnection(Thread):
         if output_path:
             self.output_path = output_path
         else:
+            millis = int(round(time.time() * 1000))
             self.output_path = os.path.join(
                 tempfile.gettempdir(),
-                "educube_telemetry_%s.raw" % self.conn_type
+                "educube_telemetry_%s_%s.raw" % (self.conn_type, millis)
             )
         self.read_interval_s = read_interval_s
         self.telem_request_interval_s = telem_request_interval_s
@@ -119,7 +120,11 @@ class EducubeConnection(Thread):
             self.connection.flush()
         except:
             logger.exception("Error sending data")
- 
+        try:
+            self.output_file.write("COMMAND_SENT:%s" % command_structure)
+        except:
+            logger.exception("Error logging sent data to file")
+        
     def write_buffer_to_log(self):
         for telem in self.telemetry_buffer:
             self.output_file.write(self.telem_raw_format.format(

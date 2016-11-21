@@ -4,7 +4,7 @@ $(document).ready(function () {
 });
 
 function hook_commands(){
-    $('.educube_action').click(function(){
+    $(document).on('click', '.educube_action', function(){
         var command = $(this).data("cmd");
         var board = $(this).data("board");
         var cmdstring = "C|" + board + "|" + command;

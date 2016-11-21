@@ -1,6 +1,7 @@
 import os
 import json
 import time
+import click
 import webbrowser
 import tornado.web
 import tornado.ioloop
@@ -110,6 +111,11 @@ def start_webserver(connection):
     global educube_connection
     # Initialize the connection to the EduCube
     educube_connection = educonn.get_connection(connection)
+    edu_url = "http://localhost:%s" % PORT
+    print("EduCube will be available at %s" % edu_url)
+    click.secho("Your telemetry will be stored at '%s'" % (educube_connection.output_path), fg='green')
+    click.prompt("Press any key to continue", default=True, show_default=False)
+    
     # Setup the web application
     applicaton = Application()
     http_server = tornado.httpserver.HTTPServer(applicaton)
@@ -122,8 +128,6 @@ def start_webserver(connection):
     tornado.autoreload.add_reload_hook( # shutdown serial when reloading
         educonn.shutdown_all_connections
     )
-    edu_url = "http://localhost:%s" % PORT
-    print("Visit your browser at %s" % edu_url)
     webbrowser.open_new(edu_url)
     try:
         tornado.ioloop.IOLoop.instance().start()
