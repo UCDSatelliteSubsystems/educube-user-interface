@@ -1,29 +1,24 @@
 #!/usr/bin/env python
-import os
-import sys
-import json
 import click
 import serial
 import pkg_resources
 import serial.tools.list_ports
-import logging.config
 
 from educube.web import server as webserver
+from educube.util.logging_utils import configure_logging
 
 import logging
 logger = logging.getLogger(__name__)
 
-plugin_folder = os.path.join(os.path.dirname(__file__), 'commands')
 
-
-def configure_logging(verbose):
-    loglevels = {
-        0: logging.ERROR,
-        1: logging.WARNING,
-        2: logging.INFO,
-        3: logging.DEBUG,
-    }
-    logging.basicConfig(level=loglevels[verbose])
+#def configure_logging(verbose):
+#    loglevels = {
+#        0: logging.ERROR,
+#        1: logging.WARNING,
+#        2: logging.INFO,
+#        3: logging.DEBUG,
+#    }
+#    logging.basicConfig(level=loglevels[verbose])
 
 
 def verify_serial_connection(port, baud):
@@ -31,12 +26,14 @@ def verify_serial_connection(port, baud):
         ser = serial.Serial(port, baud, timeout=1)
         a = ser.read()
         if a:
-            logger.debug('Serial open: %s' % port)
+            logger.debug('Serial open: {port}'.format(port=port))
         else:
-            logger.debug('Serial exists but is not readable (permissions?): %s' % port)
+            msg = ('Serial exists but is not readable '
+                   +'(permissions?): {port}'.format(port=port))
+            logger.debug(msg)
         ser.close()
     except serial.serialutil.SerialException as e:
-        raise click.BadParameter("Serial not readable: %s" % e)
+        raise click.BadParameter("Serial not readable: {exc}".format(exc=e))
 
 ##############################
 # COMMANDS
@@ -55,9 +52,13 @@ def get_baud():
     else:
         return 115200
 
+##############################
+# COMMAND LINE INTERFACE
+##############################
 
 @click.group()
-@click.option('-v', '--verbose', count=True)
+@click.option('-v', '--verbose', count=True,
+               help="Set the log verbosity level (-v, -vv, -vvv)")
 @click.pass_context
 def cli(ctx, verbose):
     """Educube Client"""
@@ -79,10 +80,10 @@ def start(ctx, serial, baud, board, fake, json):
     """Starts the EduCube web interface""" 
 
     logger.debug("""Running with settings:
-        Serial: %s
-        Baudrate: %s
-        EduCube board: %s
-    """ % (serial, baud, board))
+        Serial: {serial}
+        Baudrate: {baud}
+        EduCube board: {board}
+    """.format(serial=serial, baud=baud, board=board))
 
     ctx.obj['connection'] = {
         "type": "serial",
@@ -98,6 +99,9 @@ def start(ctx, serial, baud, board, fake, json):
         connection=ctx.obj.get('connection')
     )
 
+##############################
+# MAIN
+##############################
 
 def main():
     cli(obj={})
