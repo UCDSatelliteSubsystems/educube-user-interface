@@ -14,5 +14,17 @@ def current_time(fmt='%Y-%m-%d-%H-%M-%S'):
 
 def configure_logging(verbose):
     """Set the logging level and handlers."""
-    logging.basicConfig(level=LOGLEVELS[verbose],
-                        filename=current_time()+'.log')
+    filehandler = logging.FileHandler(filename=current_time()+'.log')
+    fmt = '%(asctime)s : %(levelname)s : %(message)s'
+    filehandler.setFormatter(logging.Formatter(fmt))
+    filehandler.setLevel(LOGLEVELS[verbose])
+
+    root = logging.getLogger()
+    root.addHandler(filehandler)
+    root.setLevel(LOGLEVELS[verbose])
+
+    return root
+
+
+#    logging.basicConfig(level=LOGLEVELS[verbose],
+#                        filename=current_time()+'.log')

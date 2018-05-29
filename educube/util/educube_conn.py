@@ -35,7 +35,7 @@ class EducubeConnection(Thread):
         output_path=None,
         read_interval_s=5,
         telem_request_interval_s=5):
-        ''' Constructor '''
+        """ Constructor """
         Thread.__init__(self)
         self.conn_type = conn_type
         self.port = port
@@ -43,7 +43,10 @@ class EducubeConnection(Thread):
         self.board_id = board
         self.timeout=.5
 
-        assert(board in [self.board_id_EPS, self.board_id_CDH, self.board_id_EXP, self.board_id_ADC])
+        if board not in [self.board_id_EPS, self.board_id_CDH, 
+                         self.board_id_EXP, self.board_id_ADC ]:
+            errmsg = 'Invalid board identifier {board}'.format(board=board)
+            raise RuntimeError(errmsg)
 
         if output_path:
             self.output_path = output_path
@@ -57,7 +60,18 @@ class EducubeConnection(Thread):
         self.telem_request_interval_s = telem_request_interval_s
         self.setup_connection()
         self.running = True
-        logger.info("Telemetry will be stored to %s" % self.output_path)
+        logger.info("Telemetry will be stored to {path}"\
+                    .format(path=self.output_path)       )
+
+    def run(self):
+        while self.running:
+            self.read_telem()
+            self.request_telem()
+            for i in range(int(self.read_interval_s/.5)):
+                if self.running:
+                    time.sleep(.5)
+        self.close_connections()
+        logger.info("Stopped")
     
     def read_telem(self):
         while self.connection.inWaiting() > 0:
@@ -80,16 +94,6 @@ class EducubeConnection(Thread):
         self.connection = serial.Serial(
             self.port, self.baud, timeout=3
         )
-    
-    def run(self):
-        while self.running:
-            self.read_telem()
-            self.request_telem()
-            for i in range(int(self.read_interval_s/.5)):
-                if self.running:
-                    time.sleep(.5)
-        self.close_connections()
-        logger.info("Stopped")
 
     def get_telemetry(self):
         telemetry = copy.deepcopy(self.telemetry_buffer)
@@ -108,22 +112,22 @@ class EducubeConnection(Thread):
         )
         return formatted_command
 
-    def send_command(self, command):
-        command_structure = '{command_start}{command}{command_end}'.format(
-            command_start=str(self.syntax_command_start),
-            command_end=str(self.syntax_command_end),
-            command=str(command)
+    def send_command(self, cmd):
+        cmd_structure = '{cmd_start}{cmd}{cmd_end}'.format(
+            cmd_start=str(self.syntax_command_start),
+            cmd_end=str(self.syntax_command_end),
+            cmd=str(cmd)
         )
-        logger.info("Writing command: '%s' (%s)" % (command, command_structure))
+        logger.info("Writing command: '%s' (%s)" % (cmd, cmd_structure))
         try:
-            self.connection.write(str.encode(command_structure))
+            self.connection.write(str.encode(cmd_structure))
             self.connection.flush()
         except:
-            logger.exception("Error sending data")
+            logger.exception("Error sending data", exc_info=True)
         try:
-            self.output_file.write("COMMAND_SENT:%s" % command_structure)
+            self.output_file.write("COMMAND_SENT:%s" % cmd_structure)
         except:
-            logger.exception("Error logging sent data to file")
+            logger.exception("Error logging sent data to file", exc_info=True)
         
     def write_buffer_to_log(self):
         for telem in self.telemetry_buffer:

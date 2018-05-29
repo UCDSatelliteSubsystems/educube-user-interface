@@ -9,4 +9,5 @@ print('These are the attached loggers')
 for key, val in root.manager.loggerDict.items():
     print(key, val)
 
+
 main()
