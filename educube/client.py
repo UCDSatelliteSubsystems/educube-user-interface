@@ -47,7 +47,7 @@ def get_serial():
 def get_baud():
     ports = serial.tools.list_ports.comports()
     suggested_educube_port = ports[-1]
-    if suggested_educube_port.description == 'BASE':
+    if suggested_educube_port.description in ['BASE', 'Base Station']:
         return 9600
     else:
         return 115200
