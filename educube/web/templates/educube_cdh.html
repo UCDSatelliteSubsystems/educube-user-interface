@@ -1,67 +1,79 @@
 <script src="https://maps.googleapis.com/maps/api/js"></script>
 
 <div class="tab-pane fade" id="board_cdh" onload="init_cdh_map()">
-    <div class="col-sm-12">
-        <div class="panel panel-primary">
-          <div class="panel-heading">CDH Commands</div>
-          <div class="panel-body">
-            <div class="col-sm-12">
-              {# <button data-board="CDH" data-cmd="BLINKY" class="educube_action btn btn-sm btn-info"><abbr title="Toggle the EduCube LEDs">Blinky</abbr></button> #}
-              {# <button data-board="CDH" data-cmd="OP" class="educube_action btn btn-sm btn-warning"><abbr title="Toggle Operational Mode">Op Mode</abbr></button> #}
-              <button data-board="CDH" data-cmd="T" class="educube_action btn btn-sm btn-info pull-right">Request Telemetry</button>
-            </div>
-          </div>
+  <div class="col-sm-12">
+    <div class="panel panel-primary">
+      <div class="panel-heading">CDH Commands</div>
+      <div class="panel-body">
+        <div class="col-sm-12">
+          {# <button data-board="CDH" data-cmd="BLINKY" 
+                 class="educube_action btn btn-sm btn-info">
+               <abbr title="Toggle the EduCube LEDs">Blinky</abbr>
+             </button> #}
+          {# <button data-board="CDH" data-cmd="OP" 
+                 class="educube_action btn btn-sm btn-warning">
+               <abbr title="Toggle Operational Mode">Op Mode</abbr>
+             </button> #}
+          <button data-board="CDH" data-cmd="T" 
+              class="educube_action btn btn-sm btn-info pull-right">
+            Request Telemetry
+          </button>
         </div>
-    </div>
-    <div class="col-sm-12 telem_content">
-        <div class="alert alert-warning" role="alert">
-            CDH Telemetry has not been received yet
-        </div>
-    </div>
-    <div class="col-sm-12">
-      <div class="row"> 
-        <style>
-          #map {
-            height: 500px;
-            overflow:visible;
-          }
-        </style>
-
-        <div id="map"></div>
       </div>
     </div>
+  </div>
+  <div class="col-sm-12 telem_content">
+    <div class="alert alert-warning" role="alert">
+        CDH Telemetry has not been received yet
+    </div>
+  </div>
+  <div class="col-sm-12">
+    <div class="row"> 
+      <style>
+        #map {
+          height: 500px;
+          overflow:visible;
+        }
+      </style>
+
+      <div id="map"></div>
+    </div>
+  </div>
 </div>
 
 
 <div style="display:none;">
-    <script id="tmpl-cdh_telem_view" type="text/x-jQuery-tmpl">
-        <div class="row">
-            <h3>Separation State: <small>(${SEPARATION.ID}) ${SEPARATION.VAL}</small></h3>
-            <h3>Board States:</h3>
-            {{!each(prop, val) HOT_PLUG}}
-              {{!if val==1}}
-                <span class="label label-success">${prop} (Attached)</span>
-              {{!else}}
-                <span class="label label-warning">${prop} (Missing)</span>
-              {{!/if}}
-            {{!/each}}
-        </div>
-        <div class="row">
-            <h3>GPS data</h3>
-            <div class="col-sm-6">
-              <dl class="dl-horizontal">
-                <dt>GPS fix time</dt><dd>${GPS_DATE}</dd>
-                <dt>GPS HDOP</dt><dd>${GPS_META.HDOP}</dd>
-                <dt>GPS fix status</dt><dd>${GPS_META.STATUS_INT}) ${GPS_META.STATUS}</dd>
-              </dl>
-            </div>
-            <div class="col-sm-6">
-              <dl class="dl-horizontal">
-                <dt>GPS LAT</dt><dd>${GPS_FIX.LAT} deg</dd>
-                <dt>GPS LON</dt><dd>${GPS_FIX.LON} deg</dd>
-                <dt>GPS ALT</dt><dd>${GPS_META.ALT_CM} cm</dd>
-              </dl>
-            </div>
-        </div>
-    </script>
+  <script id="tmpl-cdh_telem_view" type="text/x-jQuery-tmpl">
+    <div class="row">
+      <h3>Separation State: 
+        <small>(${SEPARATION.ID}) ${SEPARATION.VAL}</small>
+      </h3>
+      <h3>Board States:</h3>
+      {{!each(prop, val) HOT_PLUG}}
+        {{!if val==1}}
+          <span class="label label-success">${prop} (Attached)</span>
+        {{!else}}
+          <span class="label label-warning">${prop} (Missing)</span>
+        {{!/if}}
+      {{!/each}}
+    </div>
+    <div class="row">
+      <h3>GPS data</h3>
+      <div class="col-sm-6">
+        <dl class="dl-horizontal">
+          <dt>GPS fix time</dt><dd>${GPS_DATE}</dd>
+          <dt>GPS HDOP</dt><dd>${GPS_META.HDOP}</dd>
+          <dt>GPS fix status</dt>
+            <dd>${GPS_META.STATUS_INT}) ${GPS_META.STATUS}</dd>
+        </dl>
+      </div>
+      <div class="col-sm-6">
+        <dl class="dl-horizontal">
+          <dt>GPS LAT</dt><dd>${GPS_FIX.LAT} deg</dd>
+          <dt>GPS LON</dt><dd>${GPS_FIX.LON} deg</dd>
+          <dt>GPS ALT</dt><dd>${GPS_META.ALT_CM} cm</dd>
+        </dl>
+      </div>
+    </div>
+  </script>
 </div>

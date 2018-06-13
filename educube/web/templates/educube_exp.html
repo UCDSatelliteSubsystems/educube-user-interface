@@ -1,150 +1,164 @@
 <div class="tab-pane fade" id="board_exp">
-    <div class="col-sm-12">
-        <div class="panel panel-primary">
-          <div class="panel-heading">EXP Commands</div>
-          <div class="panel-body">
-            
-            <div class="col-sm-4">
-                <div class="input-group">
-                    <label for="outfile">P1 Heat (<span id="exp_pwr_1_txt">0</span>%)</label>
-                    <div id="exp_slider_1"></div>
-                </div>
-            </div>
-
-            <div class="col-sm-4">
-                <div class="input-group">
-                    <label for="outfile">P2 Heat (<span id="exp_pwr_2_txt">0</span>%)</label>
-                    <div id="exp_slider_2"></div>
-                </div>
-            </div>
-
-            <script>
-            $(document).ready(function(){
-              $(function() {                        
-                $("#exp_slider_1").noUiSlider({
-                    handles: 1,
-                    start:[0],
-                    step: 1,
-                    range: {
-                        'min': 0,
-                        'max': 100
-                    }
-                }).on('set', function( event, val ) {
-                    var val = Math.round(val)
-                    var cmdstring = "C|EXP|HEAT|1|"+Math.abs(val) ;
-                    websocket.send(cmdstring);
-                    provide_notice({"message": "Command sent ("+cmdstring+")", "type": "success"});
-                }).on('slide', function( event, val ) {
-                    var val = Math.round(val)
-                    $("#exp_pwr_1_txt").text(val);
-                });
-
-                $("#exp_slider_2").noUiSlider({
-                    handles: 1,
-                    start:[0],
-                    step: 1,
-                    range: {
-                        'min': 0,
-                        'max': 100
-                    }
-                }).on('set', function( event, val ) {
-                    var val = Math.round(val)
-                    var cmdstring = "C|EXP|HEAT|2|"+Math.abs(val) ;
-                    websocket.send(cmdstring);
-                    provide_notice({"message": "Command sent ("+cmdstring+")", "type": "success"});
-                }).on('slide', function( event, val ) {
-                    var val = Math.round(val)
-                    $("#exp_pwr_2_txt").text(val);
-                });
-                
-              });
-            });
-            </script>
-
-
-            <div class="col-sm-4">
-              <button data-board="EXP" data-cmd="T" class="educube_action btn btn-sm btn-info pull-right">Request Telemetry</button>
-            </div>
-
-
+  <div class="col-sm-12">
+    <div class="panel panel-primary">
+      <div class="panel-heading">EXP Commands</div>
+      <div class="panel-body">
+        <div class="col-sm-4">
+          <div class="input-group">
+            <label for="outfile">
+              P1 Heat (<span id="exp_pwr_1_txt">0</span>%)
+            </label>
+            <div id="exp_slider_1"></div>
           </div>
         </div>
-    </div>
-    <div class="col-sm-12 telem_content">
-        <div class="alert alert-warning" role="alert">
-            EXP Telemetry has not been received yet
+
+        <div class="col-sm-4">
+          <div class="input-group">
+            <label for="outfile">
+              P2 Heat (<span id="exp_pwr_2_txt">0</span>%)
+            </label>
+            <div id="exp_slider_2"></div>
+          </div>
         </div>
+<!--
+        <script>
+        $(document).ready(function(){
+          $(function() {                        
+            $("#exp_slider_1").noUiSlider({
+                handles: 1,
+                start:[0],
+                step: 1,
+                range: {
+                    'min': 0,
+                    'max': 100
+                }
+            }).on('set', function( event, val ) {
+                var val = Math.round(val)
+                var cmdstring = "C|EXP|HEAT|1|"+Math.abs(val) ;
+                websocket.send(cmdstring);
+                provide_notice({"message": "Command sent ("+cmdstring+")", "type": "success"});
+            }).on('slide', function( event, val ) {
+                var val = Math.round(val)
+                $("#exp_pwr_1_txt").text(val);
+            });
+
+            $("#exp_slider_2").noUiSlider({
+                handles: 1,
+                start:[0],
+                step: 1,
+                range: {
+                    'min': 0,
+                    'max': 100
+                }
+            }).on('set', function( event, val ) {
+                var val = Math.round(val)
+                var cmdstring = "C|EXP|HEAT|2|"+Math.abs(val) ;
+                websocket.send(cmdstring);
+                provide_notice({"message": "Command sent ("+cmdstring+")", "type": "success"});
+            }).on('slide', function( event, val ) {
+                var val = Math.round(val)
+                $("#exp_pwr_2_txt").text(val);
+            });
+            
+          });
+        });
+        </script>
+-->
+
+        <div class="col-sm-4">
+          <button data-board="EXP" data-cmd="T" class="educube_action btn btn-sm btn-info pull-right">Request Telemetry</button>
+        </div>
+
+
+      </div>
     </div>
+  </div>
+  <div class="col-sm-12 telem_content">
+    <div class="alert alert-warning" role="alert">
+        EXP Telemetry has not been received yet
+    </div>
+  </div>
 </div>
 
 
 <div style="display:none;">
-    <div id="tmpl-exp_telem_view" type="text/x-jQuery-tmpl">
-        
-        <div class="row">
-            <div class="col-sm-12 ina-block">
-                <div class="panel panel-info">
-                    <div class="panel-heading">
-                        <h4 class="panel-title">Panel 1 (Black)</h3>
-                    </div>
-                    <div class="panel-body" style="background-color: #111; color: #EEE;">
-                        <div class="col-sm-2">
-                            <h1>${THERM_PWR.P1} %</h1>
-                        </div>
-                        <div class="col-sm-4">
-                            {{!each INA}}
-                                {{!if address=="64"}}
-                                    <dl>
-                                        <dt>Bus</dt><dd><span class="label label-primary">${bus_V} V</span></dd>
-                                        <dt>Current</dt><dd><span class="label label-primary">${current_mA} mA</span></dd>
-                                        <dt>Power</dt><dd><span class="label label-primary">${power_mW} mW</span></dd>
-                                    </dl>
-                                {{!/if}}
-                            {{!/each}}
-                        </div>
-                        <div class="col-sm-4">
-                            <dl>
-                                <dt>TempA</dt><dd><span class="label label-primary">${PANEL_TEMP.P1.A} C</span></dd>
-                                <dt>TempB</dt><dd><span class="label label-primary">${PANEL_TEMP.P1.B} C</span></dd>
-                                <dt>TempC</dt><dd><span class="label label-primary">${PANEL_TEMP.P1.C} C</span></dd>
-                            </dl>
-                        </div>
-                    </div>
-                </div>
+  <div id="tmpl-exp_telem_view" type="text/x-jQuery-tmpl">
+    <div class="row">
+      <div class="col-sm-12 ina-block">
+        <div class="panel panel-info">
+          <div class="panel-heading">
+            <h4 class="panel-title">Panel 1 (Black)</h3>
+          </div>
+          <div class="panel-body" style="background-color: #111; color: #EEE;">
+            <div class="col-sm-2">
+                <h1>${THERM_PWR.P1} %</h1>
             </div>
-            <div class="col-sm-12 ina-block">
-                <div class="panel panel-info">
-                    <div class="panel-heading">
-                        <h4 class="panel-title">Panel 2 (White)</h3>
-                    </div>
-                    <div class="panel-body" style="background-color: #EEE; color: #111;">
-                        <div class="col-sm-2">
-                            <h1>${THERM_PWR.P2} %</h1>
-                        </div>
-                        <div class="col-sm-4">
-                            {{!each INA}}
-                                {{!if address=="67"}}
-                                    <dl>
-                                        <dt>Bus</dt><dd><span class="label label-primary">${bus_V} V</span></dd>
-                                        <dt>Current</dt><dd><span class="label label-primary">${current_mA} mA</span></dd>
-                                        <dt>Power</dt><dd><span class="label label-primary">${power_mW} mW</span></dd>
-                                    </dl>
-                                {{!/if}}
-                            {{!/each}}
-                        </div>
-                        <div class="col-sm-4">
-                            <dl>
-                                <dt>TempA</dt><dd><span class="label label-primary">${PANEL_TEMP.P2.A} C</span></dd>
-                                <dt>TempB</dt><dd><span class="label label-primary">${PANEL_TEMP.P2.B} C</span></dd>
-                                <dt>TempC</dt><dd><span class="label label-primary">${PANEL_TEMP.P2.C} C</span></dd>
-                            </dl>
-                        </div>
-                    </div>
-                </div>
-
+            <div class="col-sm-4">
+              {{!each INA}}
+                {{!if address=="64"}}
+                  <dl>
+                    <dt>Bus</dt><dd><span class="label label-primary">
+                      ${bus_V} V
+                    </span></dd>
+                    <dt>Current</dt><dd><span class="label label-primary">
+                      ${current_mA} mA
+                    </span></dd>
+                    <dt>Power</dt><dd><span class="label label-primary">
+                      ${power_mW} mW
+                    </span></dd>
+                  </dl>
+                {{!/if}}
+              {{!/each}}
             </div>
+            <div class="col-sm-4">
+              <dl>
+                <dt>TempA</dt>
+                <dd><span class="label label-primary">
+                  ${PANEL_TEMP.P1.A} C
+                </span></dd>
+                <dt>TempB</dt>
+                <dd><span class="label label-primary">
+                  ${PANEL_TEMP.P1.B} C
+                </span></dd>
+                <dt>TempC</dt>
+                <dd><span class="label label-primary">
+                  ${PANEL_TEMP.P1.C} C
+                </span></dd>
+              </dl>
+            </div>
+          </div>
         </div>
-
-        
+      </div>
+      <div class="col-sm-12 ina-block">
+        <div class="panel panel-info">
+          <div class="panel-heading">
+            <h4 class="panel-title">Panel 2 (White)</h3>
+          </div>
+          <div class="panel-body" style="background-color: #EEE; color: #111;">
+            <div class="col-sm-2">
+              <h1>${THERM_PWR.P2} %</h1>
+            </div>
+            <div class="col-sm-4">
+              {{!each INA}}
+                {{!if address=="67"}}
+                  <dl>
+                    <dt>Bus</dt><dd><span class="label label-primary">${bus_V} V</span></dd>
+                    <dt>Current</dt><dd><span class="label label-primary">${current_mA} mA</span></dd>
+                    <dt>Power</dt><dd><span class="label label-primary">${power_mW} mW</span></dd>
+                  </dl>
+                {{!/if}}
+              {{!/each}}
+            </div>
+            <div class="col-sm-4">
+                <dl>
+                    <dt>TempA</dt><dd><span class="label label-primary">${PANEL_TEMP.P2.A} C</span></dd>
+                    <dt>TempB</dt><dd><span class="label label-primary">${PANEL_TEMP.P2.B} C</span></dd>
+                    <dt>TempC</dt><dd><span class="label label-primary">${PANEL_TEMP.P2.C} C</span></dd>
+                </dl>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
 </div>

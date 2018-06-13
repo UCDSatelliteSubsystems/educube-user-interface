@@ -8,6 +8,10 @@ from threading import Thread
 import logging
 logger = logging.getLogger(__name__)
 
+#from collections import namedtuple
+#MagtorquerValues = namedtuple('MagtorquerValues', ['PLUS', 'OFF', 'MINUS'])
+#MAG = MagtorquerValues(PLUS=1, OFF=0, MINUS=-1)
+
 #connections = []
 
 def millis():
@@ -35,7 +39,12 @@ class EducubeConnectionThread(Thread):
 
 
 class EducubeConnection():
-    """."""    
+    """\
+    Serial interface to send commands to and receive telemetry from an EduCube.
+
+
+
+    """    
     syntax_command_start = '['
     syntax_command_end = ']'
     syntax_command = 'C'
@@ -115,12 +124,6 @@ class EducubeConnection():
         logger.debug("Closing telemetry save file")
         self.output_file.close()
 
-#    def setup_connection(self):
-#        self.setup_connections()
-#
-#    def close_connections(self):
-#        self.teardown_connections()
-
     ################
     # thread management
     ################
@@ -136,10 +139,6 @@ class EducubeConnection():
         self.running = False
         self.thread.join()
 
-#    def shutdown(self):
-#        self.stop()
-
-
     ################
     # basic commands
     ################
@@ -152,13 +151,17 @@ class EducubeConnection():
             logger.debug("Received telemetry: {telem}".format(telem=telem))
 
     def request_telem(self,):
-        if ((time.time() - self.last_telem_request) 
-                > self.telem_request_interval_s    ):
-            self.last_telem_request = time.time()
-            logger.debug("Requesting telemetry from board {id}"\
-                         .format(id=self.board_id)              )
-            command = self.format_command(self.telem_request_command)
-            self.send_command(command)
+        """
+        Send the telemetry request command [C|CDH|T]
+
+        """
+        logger.debug("Requesting telemetry from board {id}"\
+                     .format(id=self.board_id)              )
+        command = self.format_command(self.telem_request_command)
+        self.send_command(command)
+        # update last_telem_request time
+        self.last_telem_request = time.time()
+
 
     def send_command(self, cmd):
         cmd_structure = ('{cmd_start}{cmd}{cmd_end}'\
@@ -187,6 +190,33 @@ class EducubeConnection():
     ################
     # specific commands
     ################
+
+    def cmd_blinky(self):
+        cmd = 'C|CDH|BLINKY'
+        self.send_command(cmd)
+
+    def cmd_xmagtorquer(self, s):
+
+    def cmd_ymagtorquer(self, s):
+
+    def cmd_reaction_wheel(self, val):
+
+    def cmd_thermal_panel(self, panel, val):
+
+
+#    def set_xmagtorquer(self, s=None):
+#        if s in (0,):
+#            cmd = 'C|ADC|MAG|X|0'
+#        elif s in (
+#
+#
+#        self.send_command(cmd)
+#
+#    def set_ymagtorquer(self, v=None):
+#        cmd = 'C|ADC|MAG|Y|{sgn}'.format(sgn=s)
+#        self.send_command(cmd)
+
+
 
     ################
     # convenience methods
@@ -227,14 +257,9 @@ class FakeEducubeConnection(EducubeConnection):
         self.connection = os.fdopen(fd, "w")
         logger.debug("Using fake serial connection to: %s" % filename)
 
-    def read_telem(self):
+    def request_telem(self):
         logger.info("Fake connection: ignoring telem request")
 
-
-#def shutdown_all_connections():
-#    for conn in connections:
-#        conn.shutdown()
-#        conn.join()
 
 
 def get_connection(connection):

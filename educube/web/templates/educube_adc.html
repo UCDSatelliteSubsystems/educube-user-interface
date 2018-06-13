@@ -1,185 +1,295 @@
+<!--
 <link href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/6.2.0/jquery.nouislider.min.css" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/6.2.0/jquery.nouislider.min.js"></script>
+-->
 
 <div class="tab-pane fade" id="board_adc">
-    <div class="col-sm-12">
-        <div class="panel panel-primary">
-          <div class="panel-heading">ADC Commands</div>
-          <div class="panel-body">
-            
-            <div class="col-sm-12 col-md-4">
-                <div class="input-group">
-                    <label for="outfile">Wheel Power (<span id="spdtxt">0</span>%)</label>
-                    <div id="spdslider"></div>
-                </div>
-            </div>
-
-            <div class="col-sm-8 col-md-6">
-              MagTorquers:
-              <button data-board="ADC" data-cmd="MAG|X|-" class="educube_action btn btn-sm btn-danger">X-</button>
-              <button data-board="ADC" data-cmd="MAG|X|0" class="educube_action btn btn-sm btn-default">Off</button>
-              <button data-board="ADC" data-cmd="MAG|X|+" class="educube_action btn btn-sm btn-success">X+</button>
-              |
-              <button data-board="ADC" data-cmd="MAG|Y|-" class="educube_action btn btn-sm btn-danger">Y-</button>
-              <button data-board="ADC" data-cmd="MAG|Y|0" class="educube_action btn btn-sm btn-default">Off</button>
-              <button data-board="ADC" data-cmd="MAG|Y|+" class="educube_action btn btn-sm btn-success">Y+</button>
-            </div>
-
-            <div class="col-sm-4 col-md-2">
-              <button data-board="ADC" data-cmd="T" class="educube_action btn btn-sm btn-info btn-block pull-right">Request Telemetry</button>
-            </div>
-
+  <div class="col-sm-12">
+    <div class="panel panel-primary">
+      <div class="panel-heading">ADC Commands</div>
+      <div class="panel-body">    
+        <div class="col-sm-12 col-md-4">
+          <div class="input-group">
+            <label for="outfile">
+              Wheel Power (<span id="spdtxt">0</span>%)
+            </label>
+            <div id="spdslider"></div>
           </div>
         </div>
-    </div>
-    <div class="col-sm-12 telem_content">
-        <div class="alert alert-warning" role="alert">
-            ADC Telemetry has not been received yet
+        <div class="col-sm-8 col-md-6">
+          <div class="input-group">
+            <label for="outfile">
+              MagTorquers:
+            </label>
+            <button data-board="ADC" data-cmd="MAG|X|-" 
+                class="educube_action btn btn-sm btn-danger">X-</button>
+            <button data-board="ADC" data-cmd="MAG|X|0" 
+                class="educube_action btn btn-sm btn-default">Off</button>
+            <button data-board="ADC" data-cmd="MAG|X|+" 
+                class="educube_action btn btn-sm btn-success">X+</button>
+            |
+            <button data-board="ADC" data-cmd="MAG|Y|-" 
+                class="educube_action btn btn-sm btn-danger">Y-</button>
+            <button data-board="ADC" data-cmd="MAG|Y|0" 
+                class="educube_action btn btn-sm btn-default">Off</button>
+            <button data-board="ADC" data-cmd="MAG|Y|+" 
+                class="educube_action btn btn-sm btn-success">Y+</button>
+          </div>
         </div>
+        <div class="col-sm-4 col-md-2">
+          <button data-board="ADC" data-cmd="T" 
+              class="educube_action btn btn-sm btn-info btn-block pull-right">
+            Request Telemetry
+          </button>
+        </div>
+
+      </div>
     </div>
+  </div>
+  <div class="col-sm-12 telem_content">
+    <div class="alert alert-warning" role="alert">
+        ADC Telemetry has not been received yet
+    </div>
+  </div>
 </div>
 
 
+<link href="{{ static_url("css/nouislider.css") }}" rel="stylesheet">
+<script src="{{ static_url("js/nouislider.js") }}"></script>
 <script>
-$(document).ready(function(){
-  $(function() {                        
-    $("#spdslider").noUiSlider({
+    function createClickSlider() {
+      var slider = $("#spdslider")[0]
+      noUiSlider.create(slider, {
         handles: 1,
         start:[0],
         step: 5,
         range: {
             'min': -100,
             'max': 100
-        }
-    }).on('set', function( event, speedval ) {
+            },
+          pips: { mode: 'count', values: 5 }
+      })
+      slider.noUiSlider.on("set", setSpeedVal)
+      slider.noUiSlider.on("slide", slideSpeedVal);
+
+      var pips = slider.querySelectorAll('.noUi-value');
+
+      for ( var i = 0; i < pips.length; i++ ) {
+          // For this example. Do this in CSS!
+          pips[i].style.cursor = 'pointer';
+          pips[i].addEventListener('click', clickOnPip);
+      }
+
+    }
+
+    function clickOnPip ( ) {
+        var slider = $("#spdslider")[0]
+        var value = Number(this.getAttribute('data-value'));
+        slider.noUiSlider.set(value);
+    }
+
+    function setSpeedVal(speedval){
         var speed = Math.round(speedval)
         var sign = "+";
         if (speed < 0) 
             sign = "-"
         var cmdstring = "C|ADC|REACT|"+sign+"|"+Math.abs(speed) ;
         websocket.send(cmdstring);
-        provide_notice({"message": "Command sent ("+cmdstring+")", "type": "success"});
-    }).on('slide', function( event, speedval ) {
-        var speed = Math.round(speedval)
+        provide_notice({"message": "Command sent ("+cmdstring+")", 
+                            "type"   : "success"                      });
         $("#spdtxt").text(speed);
-    });
-    
-  });
-});
+
+    }
+  
+    function slideSpeedVal(speedval){
+        var speed = Math.round(speedval);
+        $("#spdtxt").text(speed);
+    }
+
+
+
+    $(document).ready(createClickSlider);
+
+
+//
+//
+//  function createClickSlider(){
+//    var slider = $("#spdslider")
+//    slider.noUiSlider({
+//        handles: 1,
+//        start:[0],
+//        step: 5,
+//        range: {
+//            'min': -100,
+//            'max': 100
+//            },
+//        pips: {mode:'count', values: 5}
+//        }).on("set", setSpeedVal).on("slide", slideSpeedVal);
+//
+////    var pips = slider.querySelectorAll(".noUi-value");
+//    var pips = $('.noUi-value');
+//    for (var i = 0; i < pips.length; i++){
+//      pips[i].style.cursor = "pointer";
+//      pinps[i].addEventListener("click", clickOnPip);
+//    }
+//
+//  }
+//
+//
+//  function clickOnPip(){
+//    var speedval = Number(this.getAttribute('data-value'));
+//    $("#spdslider").noUiSlider.set(speedval);
+//  }
+//
+//  $(document).ready(createClickSlider);
+//
+//  $(document).ready(function(){
+//    $(function() {                        
+//      $("#spdslider").noUiSlider({
+//          handles: 1,
+//          start:[0],
+//          step: 5,
+//          range: {
+//              'min': -100,
+//              'max': 100
+//          },
+//          pips: {mode:'count', values: 5}
+//      }).on('set', function( event, speedval ) {
+//          var speed = Math.round(speedval)
+//          var sign = "+";
+//          if (speed < 0) 
+//              sign = "-"
+//          var cmdstring = "C|ADC|REACT|"+sign+"|"+Math.abs(speed) ;
+//          websocket.send(cmdstring);
+//          provide_notice({"message": "Command sent ("+cmdstring+")", 
+//                          "type"   : "success"                      });
+//      }).on('slide', function( event, speedval ) {
+//          var speed = Math.round(speedval)
+//          $("#spdtxt").text(speed);
+//      });
+//      
+//    });
+//  };
 </script>
 
 
 
 <div style="display:none;">
-    <div id="tmpl-adc_telem_view" type="text/x-jQuery-tmpl">
-        <div class="row">
-            <h3>Attitude Control</h3>  
-            <div class="col-sm-4 ina-block">
-                <div class="panel panel-warning">
-                    <div class="panel-heading">
-                        <h4 class="panel-title">Magneto Torquers</h3>
-                    </div>
-                    <div class="panel-body">
-                        <dl>
-                            <dt>X axis</dt>
-                            <dd>
-                                {{!if MAGNO_TORQ.X_P == 0 }}
-                                  <span class="label label-warning">Enabled (X+)</span>
-                                {{!else MAGNO_TORQ.X_N == 0}}
-                                  <span class="label label-warning">Enabled (X-)</span>
-                                {{!else}}
-                                  <span class="label label-default">Disabled</span>
-                                {{!/if}}
-                            </dd>
-                            <dt>Y axis</dt>
-                            <dd>
-                                {{!if MAGNO_TORQ.Y_P == 0 }}
-                                  <span class="label label-warning">Enabled (Y+)</span>
-                                {{!else MAGNO_TORQ.Y_N == 0}}
-                                  <span class="label label-warning">Enabled (Y-)</span>
-                                {{!else}}
-                                  <span class="label label-default">Disabled</span>
-                                {{!/if}}
-                            </dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-sm-4 ina-block">
-                <div class="panel panel-warning">
-                    <div class="panel-heading">
-                        <h4 class="panel-title">Reaction Wheel</h3>
-                    </div>
-                    <div class="panel-body">
-                        <dl>
-                            <dt>Current Value</dt>
-                            <dd>
-                                ${REACT_WHEEL}
-                            </dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
-
+  <div id="tmpl-adc_telem_view" type="text/x-jQuery-tmpl">
+    <div class="row">
+      <h3>Attitude Control</h3>  
+      <div class="col-sm-4 ina-block">
+        <div class="panel panel-warning">
+          <div class="panel-heading">
+            <h4 class="panel-title">Magneto Torquers</h3>
+          </div>
+          <div class="panel-body">
+            <dl>
+              <dt>X axis</dt>
+              <dd>
+                  {{!if MAGNO_TORQ.X_P == 0 }}
+                    <span class="label label-warning">Enabled (X+)</span>
+                  {{!else MAGNO_TORQ.X_N == 0}}
+                    <span class="label label-warning">Enabled (X-)</span>
+                  {{!else}}
+                    <span class="label label-default">Disabled</span>
+                  {{!/if}}
+              </dd>
+              <dt>Y axis</dt>
+              <dd>
+                  {{!if MAGNO_TORQ.Y_P == 0 }}
+                    <span class="label label-warning">Enabled (Y+)</span>
+                  {{!else MAGNO_TORQ.Y_N == 0}}
+                    <span class="label label-warning">Enabled (Y-)</span>
+                  {{!else}}
+                    <span class="label label-default">Disabled</span>
+                  {{!/if}}
+              </dd>
+            </dl>
+          </div>
         </div>
+      </div>
 
-        <div class="row">
-            <h3>Attitude Determination</h3>  
-            <div class="col-sm-4 ina-block">
-                <div class="panel panel-info">
-                    <div class="panel-heading">
-                        <h4 class="panel-title">IMU</h3>
-                    </div>
-                    <div class="panel-body">
-                        <dl>
-                            <dt>Acceleration (milli G-force)</dt>
-                            <dd>
-                                <p>X <span class="label label-info">${MPU_ACC.X}</span></p>
-                                <p>Y <span class="label label-info">${MPU_ACC.Y}</span></p>
-                                <p>Z <span class="label label-info">${MPU_ACC.Z}</span></p>
-                            </dd>
-                            <dt>Gyroscope (degree/sec)</dt>
-                            <dd>
-                                <p>X <span class="label label-info">${MPU_GYR.X}</span></p>
-                                <p>Y <span class="label label-info">${MPU_GYR.Y}</span></p>
-                                <p>Z <span class="label label-info">${MPU_GYR.Z}</span></p>
-                            </dd>
-                            <dt>Magnetic (milli Gauss)</dt>
-                            <dd>
-                                <p>X <span class="label label-info">${MPU_MAG.X}</span></p>
-                                <p>Y <span class="label label-info">${MPU_MAG.Y}</span></p>
-                                <p>Z <span class="label label-info">${MPU_MAG.Z}</span></p>
-                            </dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-sm-4 ina-block">
-                <div class="panel panel-info">
-                    <div class="panel-heading">
-                        <h4 class="panel-title">Sun Sensors</h3>
-                    </div>
-                    <div class="panel-body">
-                        <dl>
-                            <dt>Sensors</dt>
-                            <dd>
-                                <p>Front <span class="label label-info">${SUN_SENSORS.FRONT}</span></p>
-                                <p>Right <span class="label label-info">${SUN_SENSORS.RIGHT}</span></p>
-                                <p>Back <span class="label label-info">${SUN_SENSORS.BACK}</span></p>
-                                <p>Left <span class="label label-info">${SUN_SENSORS.LEFT}</span></p>
-                            </dd>
-                            <dt>Sun angle</dt>
-                            <dd>
-                                <span class="label label-success">${SUN_DIR}</span>
-                            </dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
-
+      <div class="col-sm-4 ina-block">
+        <div class="panel panel-warning">
+          <div class="panel-heading">
+            <h4 class="panel-title">Reaction Wheel</h3>
+          </div>
+          <div class="panel-body">
+            <dl>
+                <dt>Current Value</dt>
+                <dd>
+                    ${REACT_WHEEL}
+                </dd>
+            </dl>
+          </div>
         </div>
+      </div>
 
+    </v>
+
+    <d class="row">
+      <h3>Attitude Determination</h3>  
+      <div class="col-sm-4 ina-block">
+        <div class="panel panel-info">
+          <div class="panel-heading">
+              <h4 class="panel-title">IMU</h3>
+          </div>
+          <div class="panel-body">
+            <dl>
+              <dt>Acceleration (milli G-force)</dt>
+              <dd>
+                  <p>X <span class="label label-info">${MPU_ACC.X}</span></p>
+                  <p>Y <span class="label label-info">${MPU_ACC.Y}</span></p>
+                  <p>Z <span class="label label-info">${MPU_ACC.Z}</span></p>
+              </dd>
+              <dt>Gyroscope (degree/sec)</dt>
+              <dd>
+                  <p>X <span class="label label-info">${MPU_GYR.X}</span></p>
+                  <p>Y <span class="label label-info">${MPU_GYR.Y}</span></p>
+                  <p>Z <span class="label label-info">${MPU_GYR.Z}</span></p>
+              </dd>
+              <dt>Magnetic (milli Gauss)</dt>
+              <dd>
+                  <p>X <span class="label label-info">${MPU_MAG.X}</span></p>
+                  <p>Y <span class="label label-info">${MPU_MAG.Y}</span></p>
+                  <p>Z <span class="label label-info">${MPU_MAG.Z}</span></p>
+              </dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-4 ina-block">
+        <div class="panel panel-info">
+          <div class="panel-heading">
+            <h4 class="panel-title">Sun Sensors</h3>
+          </div>
+          <div class="panel-body">
+            <dl>
+              <dt>Sensors</dt>
+              <dd>
+                <p>Front 
+                  <span class="label label-info">${SUN_SENSORS.FRONT}</span>
+                </p>
+                <p>Right 
+                  <span class="label label-info">${SUN_SENSORS.RIGHT}</span>
+                </p>
+                <p>Back 
+                  <span class="label label-info">${SUN_SENSORS.BACK}</span>
+                </p>
+                <p>Left 
+                  <span class="label label-info">${SUN_SENSORS.LEFT}</span>
+                </p>
+              </dd>
+              <dt>Sun angle</dt>
+              <dd>
+                <span class="label label-success">${SUN_DIR}</span>
+              </dd>
+            </dl>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
 </div>
