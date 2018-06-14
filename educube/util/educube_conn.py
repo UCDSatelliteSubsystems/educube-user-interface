@@ -4,6 +4,7 @@ import time
 import serial
 import tempfile
 from threading import Thread
+from math import abs
 
 import logging
 logger = logging.getLogger(__name__)
@@ -18,6 +19,12 @@ def millis():
     """Current system time in milliseconds."""
     return int(round(time.time() * 1000))
 
+
+class EducubeError(Exception):
+    """
+    An exception to be raised if errors are encountered in communicating with
+    the Educube.
+    """
 
 class EducubeConnectionThread(Thread):
     """Thread that records and requests telemetry on serial port."""
@@ -37,12 +44,9 @@ class EducubeConnectionThread(Thread):
         logger.info("EducubeConnectionThread.run has ended")
 
 
-
 class EducubeConnection():
     """\
     Serial interface to send commands to and receive telemetry from an EduCube.
-
-
 
     """    
     syntax_command_start = '['
@@ -61,12 +65,16 @@ class EducubeConnection():
     telemetry_buffer = []
     telem_raw_format = "{datestamp}\t{telem}\n"
 
-    def __init__(self, conn_type, port, board, baud=9600, fake=False,
+    def __init__(self, conn_type, portname, board, baud=9600, fake=False,
                  output_path=None, read_interval_s=5, 
                  telem_request_interval_s=5):
-        """ Constructor """
+        """
+        Constructor
+
+        Sets up the EducubeConnection object. 
+        """
         self.conn_type = conn_type
-        self.port = port
+        self.portname = portname
         self.baud = baud
         self.board_id = board
         self.timeout=.5
@@ -112,17 +120,18 @@ class EducubeConnection():
         logger.info("Telemetry will be saved to {path}"\
                     .format(path=self.output_path)       )
 
-        self.connection = serial.Serial(self.port, self.baud, timeout=3)
+        self.connection = serial.Serial(self.portname, self.baud, timeout=3)
         logger.info("Serial connection: {ser}"\
-                    .format(ser=self.connection.__repr__()))
+                    .format(ser=repr(self.connection)))
 
     def teardown_connections(self):
-        logger.debug("Closing Educube connections")
+        logger.info("Closing Educube connections")
 
-        logger.debug("Closing Serial connection")
         self.connection.close()
-        logger.debug("Closing telemetry save file")
+        logger.info("Closed Serial connection")
         self.output_file.close()
+        logger.info("Closed telemetry save file {path}"\
+                    .format(path=self.output_path))
 
     ################
     # thread management
@@ -175,16 +184,16 @@ class EducubeConnection():
             self.connection.write(str.encode(cmd_structure))
             self.connection.flush()
         except:
-            errmsg = "Encountered Error while sending data", 
+            errmsg = "Encountered Error while sending command", 
             logger.exception(errmsg, exc_info=True)
 
+        cmd_string = self.telem_raw_format\
+            .format(datestamp=millis(),
+                    telem="COMMAND_SENT: {cmd}".format(cmd=cmd_structure))
         try:
-            cmd_string = self.telem_raw_format\
-                .format(datestamp=millis(),
-                        telem="COMMAND_SENT: {cmd}".format(cmd=cmd_structure))
             self.output_file.write(cmd_string)
         except:
-            errmsg = "Encountered Error while logging sent data to file"
+            errmsg = "Encountered Error while logging sent command to file"
             logger.exception(errmsg, exc_info=True)
 
     ################
@@ -192,30 +201,65 @@ class EducubeConnection():
     ################
 
     def cmd_blinky(self):
+        """\
+        Light Educube up like a Christmas Tree!
+        """
         cmd = 'C|CDH|BLINKY'
         self.send_command(cmd)
 
-    def cmd_xmagtorquer(self, s):
+    def cmd_magtorquer(self, xy, val):
+        """\
+        Send command to turn magnetorquer on/off.
+        
+        """
+        if xy.upper() not in ('X', 'Y'):
+            raise EducubeError()
 
-    def cmd_ymagtorquer(self, s):
+        if val in (0, '0'):
+            val = '0'
+        elif val in (1, '+'):
+            val = '+'
+        elif val in (-1, '-'):
+            val = '-'
+        else:
+            errmsg = ('Invalid input for {xy} magnetorquer: {val}'\
+                      .format(xy=xy.upper(), val=val)              )
+            raise EducubeError(errmsg)
+
+        cmd = 'C|ADC|MAG|{xy}|{val}'.format(xy=xy.upper(),val=val)
+        self.send_command(cmd)
 
     def cmd_reaction_wheel(self, val):
+        """\
+        Send command to set reaction wheel.
+
+        """
+        if val < -100 or val > 100:
+            errmsg = ('Invalid input for reaction wheel {val} '
+                      +'(should be -100 <= val <= 100)'.format(val=val))
+            raise EducubeError(errmsg)
+
+        cmd = ('C|ADC|REACT|{sgn}|{mag}'\
+               .format(sgn=('+' if sgn >= 0 else '-'),
+                       mag=abs(val)                   ))
+        self.send_command(cmd)
 
     def cmd_thermal_panel(self, panel, val):
+        """\
+        Send command to set thermal panel.
+        """
+        if panel not in (1,2):
+            errmsg = ('Invalid input for thermal experiment: panel {panel} '
+                      +'(panel must be in [1,2])'.format(panel=panel))
+            raise EducubeError(errmsg)
 
+        if val < 0 or val > 100:
+            errmsg = ('Invalid input for thermal experiment val {val} '
+                      +'(val should be between 0 and 100)'.format(val=val))
+            raise EducubeError(errmsg)
 
-#    def set_xmagtorquer(self, s=None):
-#        if s in (0,):
-#            cmd = 'C|ADC|MAG|X|0'
-#        elif s in (
-#
-#
-#        self.send_command(cmd)
-#
-#    def set_ymagtorquer(self, v=None):
-#        cmd = 'C|ADC|MAG|Y|{sgn}'.format(sgn=s)
-#        self.send_command(cmd)
-
+        cmd = 'C|EXP|HEAT|{panel}|{val}'.format(panel=panel, val=val)
+        self.send_command(cmd)
 
 
     ################
@@ -236,7 +280,7 @@ class EducubeConnection():
             sep=str(self.syntax_sep),
             board=str(board),
             command=str(cmd)
-        )
+            )
         return formatted_command
         
     def write_buffer_to_log(self):
@@ -251,11 +295,16 @@ class EducubeConnection():
 
 class FakeEducubeConnection(EducubeConnection):
 
-    def setup_connection(self):
+    def setup_connections(self):
+        logger.info("Setting up FAKE Educube connections")
+
         self.output_file = open(self.output_path, 'a')
         fd, filename = tempfile.mkstemp()
         self.connection = os.fdopen(fd, "w")
         logger.debug("Using fake serial connection to: %s" % filename)
+
+    def teardown_connections(self):
+        logger.info("Tearing down FAKE Educube connections")
 
     def request_telem(self):
         logger.info("Fake connection: ignoring telem request")

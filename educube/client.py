@@ -79,7 +79,7 @@ def version():
 def start(ctx, serial, baud, board, fake, json):
     """Starts the EduCube web interface""" 
 
-    logger.debug("""Running with settings:
+    logger.info("""Running with settings:
         Serial: {serial}
         Baudrate: {baud}
         EduCube board: {board}

@@ -55,9 +55,9 @@
 
 
 <link href="{{ static_url("css/nouislider.css") }}" rel="stylesheet">
-<script src="{{ static_url("js/nouislider.js") }}"></script>
+<script src="{{ static_url("libraries/js/nouislider.js") }}"></script>
 <script>
-    function createClickSlider() {
+    function createClickSlider () {
       var slider = $("#spdslider")[0]
       noUiSlider.create(slider, {
         handles: 1,
@@ -82,7 +82,7 @@
 
     }
 
-    function clickOnPip ( ) {
+    function clickOnPip() {
         var slider = $("#spdslider")[0]
         var value = Number(this.getAttribute('data-value'));
         slider.noUiSlider.set(value);
