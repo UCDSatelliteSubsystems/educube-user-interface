@@ -3,8 +3,8 @@ import copy
 import time
 import serial
 import tempfile
-from threading import Thread
-from math import abs
+from threading import Thread, Lock
+from math import fabs
 
 import logging
 logger = logging.getLogger(__name__)
@@ -63,7 +63,7 @@ class EducubeConnection():
 
     last_telem_request = 0
     telemetry_buffer = []
-    telem_raw_format = "{datestamp}\t{telem}\n"
+    telem_raw_format = "{timestamp}\t{telemetry}\n"
 
     def __init__(self, conn_type, portname, board, baud=9600, fake=False,
                  output_path=None, read_interval_s=5, 
@@ -142,6 +142,7 @@ class EducubeConnection():
         self.thread = EducubeConnectionThread(self)
         self.running = True
         self.thread.start()
+        self.lock = Lock()
 
     def stop_thread(self):
         logger.debug("Stopping EducubeConnectionThread")
@@ -153,11 +154,19 @@ class EducubeConnection():
     ################
 
     def read_telem(self):
-        while self.connection.inWaiting() > 0:
+
+        if self.connection.in_waiting:
             telem_data = self.connection.readline().strip()
-            telem = {"time": millis(), "data": telem_data}
+            telem = (millis(), telem_data)
             self.telemetry_buffer.append(telem)
-            logger.debug("Received telemetry: {telem}".format(telem=telem))
+            logger.debug("Received telemetry: {time} : {data}"\
+                         .format(time=telem[0],data=telem[1])  )
+#        while self.connection.inWaiting() > 0:
+#            telem_data = self.connection.readline().strip()
+#            telem = (millis(), telem_data)
+#            self.telemetry_buffer.append(telem)
+#            logger.debug("Received telemetry: {time} : {data}"\
+#                         .format(time=telem[0],data=telem[1])  )
 
     def request_telem(self,):
         """
@@ -188,8 +197,8 @@ class EducubeConnection():
             logger.exception(errmsg, exc_info=True)
 
         cmd_string = self.telem_raw_format\
-            .format(datestamp=millis(),
-                    telem="COMMAND_SENT: {cmd}".format(cmd=cmd_structure))
+            .format(timestamp=millis(),
+                    telemetry="COMMAND_SENT: {cmd}".format(cmd=cmd_structure))
         try:
             self.output_file.write(cmd_string)
         except:
@@ -207,26 +216,28 @@ class EducubeConnection():
         cmd = 'C|CDH|BLINKY'
         self.send_command(cmd)
 
-    def cmd_magtorquer(self, xy, val):
+    def cmd_magtorquer(self, axis, sign):
         """\
         Send command to turn magnetorquer on/off.
         
         """
-        if xy.upper() not in ('X', 'Y'):
-            raise EducubeError()
-
-        if val in (0, '0'):
-            val = '0'
-        elif val in (1, '+'):
-            val = '+'
-        elif val in (-1, '-'):
-            val = '-'
-        else:
-            errmsg = ('Invalid input for {xy} magnetorquer: {val}'\
-                      .format(xy=xy.upper(), val=val)              )
+        if axis.upper() not in ('X', 'Y'):
+            errmsg = ('Invalid axis input for magnetorquer: '
+                      +'{axis} not in (\'X\', \'Y\')'.format(axis=axis))
             raise EducubeError(errmsg)
 
-        cmd = 'C|ADC|MAG|{xy}|{val}'.format(xy=xy.upper(),val=val)
+        if sign in (0, '0'):
+            sign = '0'
+        elif sign in (1, '+'):
+            sign = '+'
+        elif sign in (-1, '-'):
+            sign = '-'
+        else:
+            errmsg = ('Invalid input for {axis} magnetorquer: {sign}'\
+                      .format(axis=axis.upper(), sign=sign)           )
+            raise EducubeError(errmsg)
+
+        cmd = 'C|ADC|MAG|{axis}|{sign}'.format(axis=axis.upper(),sign=sign)
         self.send_command(cmd)
 
     def cmd_reaction_wheel(self, val):
@@ -241,7 +252,7 @@ class EducubeConnection():
 
         cmd = ('C|ADC|REACT|{sgn}|{mag}'\
                .format(sgn=('+' if sgn >= 0 else '-'),
-                       mag=abs(val)                   ))
+                       mag=fabs(val)                   ))
         self.send_command(cmd)
 
     def cmd_thermal_panel(self, panel, val):
@@ -267,8 +278,10 @@ class EducubeConnection():
     ################
 
     def get_telemetry(self):
-        telemetry = copy.deepcopy(self.telemetry_buffer)
-        self.write_buffer_to_log()
+        with self.lock:   # is this lock needed???
+            telemetry = copy.deepcopy(self.telemetry_buffer)
+            self.telemetry_buffer = []
+            self.write_telemetry_to_log(telemetry)
         return telemetry
 
     def format_command(self, cmd, board=None):
@@ -283,13 +296,11 @@ class EducubeConnection():
             )
         return formatted_command
         
-    def write_buffer_to_log(self):
-        for telem in self.telemetry_buffer:
+    def write_telemetry_to_log(self, telemetry_buffer):
+        for timestamp, telemetry in telemetry_buffer:
             self.output_file.write(self.telem_raw_format.format(
-                datestamp=int(telem['time']),
-                telem=telem['data']
-            ))
-        self.telemetry_buffer = []
+                timestamp = timestamp,
+                telemetry = telemetry ))
 
  
 
