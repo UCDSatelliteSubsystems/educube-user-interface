@@ -66,10 +66,11 @@
 -->
 
         <div class="col-sm-4">
-          <button data-board="EXP" data-cmd="T" class="educube_action btn btn-sm btn-info pull-right">Request Telemetry</button>
+          <button data-board="EXP" data-cmd="T" data-settings="null" 
+            class="educube_action btn btn-sm btn-info pull-right">
+              Request Telemetry
+          </button>
         </div>
-
-
       </div>
     </div>
   </div>
@@ -142,19 +143,38 @@
               {{!each INA}}
                 {{!if address=="67"}}
                   <dl>
-                    <dt>Bus</dt><dd><span class="label label-primary">${bus_V} V</span></dd>
-                    <dt>Current</dt><dd><span class="label label-primary">${current_mA} mA</span></dd>
-                    <dt>Power</dt><dd><span class="label label-primary">${power_mW} mW</span></dd>
+                    <dt>Bus</dt>
+                    <dd><span class="label label-primary">
+                      ${bus_V} V
+                    </span>
+                    </dd>
+                    <dt>Current</dt>
+                    <dd><span class="label label-primary">
+                      ${current_mA}mA
+                    </span></dd>
+                    <dt>Power</dt>
+                    <dd><span class="label label-primary">
+                      ${power_mW} mW
+                    </span></dd>
                   </dl>
                 {{!/if}}
               {{!/each}}
             </div>
             <div class="col-sm-4">
-                <dl>
-                    <dt>TempA</dt><dd><span class="label label-primary">${PANEL_TEMP.P2.A} C</span></dd>
-                    <dt>TempB</dt><dd><span class="label label-primary">${PANEL_TEMP.P2.B} C</span></dd>
-                    <dt>TempC</dt><dd><span class="label label-primary">${PANEL_TEMP.P2.C} C</span></dd>
-                </dl>
+              <dl>
+                <dt>TempA</dt>
+                <dd><span class="label label-primary">
+                  ${PANEL_TEMP.P2.A} C
+                </span></dd>
+                <dt>TempB</dt>
+                <dd><span class="label label-primary">
+                  ${PANEL_TEMP.P2.B} C
+                </span></dd>
+                <dt>TempC</dt>
+                <dd><span class="label label-primary">
+                  ${PANEL_TEMP.P2.C} C
+                </span></dd>
+              </dl>
             </div>
           </div>
         </div>

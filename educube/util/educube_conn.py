@@ -39,7 +39,7 @@ class EducubeConnectionThread(Thread):
             self.master.read_telem()
             if (time.time() - self.master.last_telem_request 
                     > self.master.telem_request_interval_s  ):
-                self.master.request_telem()
+                self.master.send_request_telem()
 
         logger.info("EducubeConnectionThread.run has ended")
 
@@ -168,7 +168,7 @@ class EducubeConnection():
 #            logger.debug("Received telemetry: {time} : {data}"\
 #                         .format(time=telem[0],data=telem[1])  )
 
-    def request_telem(self,):
+    def send_request_telem(self, board=None):
         """
         Send the telemetry request command [C|CDH|T]
 
@@ -209,14 +209,14 @@ class EducubeConnection():
     # specific commands
     ################
 
-    def cmd_blinky(self):
+    def send_set_blinky(self):
         """\
         Light Educube up like a Christmas Tree!
         """
         cmd = 'C|CDH|BLINKY'
         self.send_command(cmd)
 
-    def cmd_magtorquer(self, axis, sign):
+    def send_set_magtorquer(self, axis, sign):
         """\
         Send command to turn magnetorquer on/off.
         
@@ -240,7 +240,7 @@ class EducubeConnection():
         cmd = 'C|ADC|MAG|{axis}|{sign}'.format(axis=axis.upper(),sign=sign)
         self.send_command(cmd)
 
-    def cmd_reaction_wheel(self, val):
+    def send_set_reaction_wheel(self, val):
         """\
         Send command to set reaction wheel.
 
@@ -255,7 +255,7 @@ class EducubeConnection():
                        mag=fabs(val)                   ))
         self.send_command(cmd)
 
-    def cmd_thermal_panel(self, panel, val):
+    def send_set_thermal_panel(self, panel, val):
         """\
         Send command to set thermal panel.
         """
@@ -317,7 +317,7 @@ class FakeEducubeConnection(EducubeConnection):
     def teardown_connections(self):
         logger.info("Tearing down FAKE Educube connections")
 
-    def request_telem(self):
+    def send_request_telem(self):
         logger.info("Fake connection: ignoring telem request")
 
 

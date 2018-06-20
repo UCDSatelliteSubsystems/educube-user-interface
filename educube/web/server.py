@@ -8,7 +8,7 @@ import tornado.ioloop
 import tornado.httpserver
 from tornado import websocket
 
-from educube.util import display as display
+#from educube.util import display as display
 from educube.util import educube_conn as educonn
 
 from educube.util.telemetry_parser import TelemetryParser
@@ -73,9 +73,51 @@ class ClientSocket(websocket.WebSocketHandler):
         print("WebSocket opened")
 
     def on_message(self, message):
+        """
+        Callback function to handle received websocket messages.
+
+        Messages should be sent as stringified JSON objects, with the
+        following fields:
+
+            { msgtype : <msgtype>, msgcontent : <msgcontent> }
+
+        The only allowed <msgtype> is 'command'. For a command, <msgcontent>
+        should be a JavaScript style object, with fields:
+            { board : <board>, command : <command>, settings : <settings>}
+         
+        """
+
         logger.debug("WebSocket message received: {msg}".format(msg=message))
-        if message.startswith("C|"):
-            send_command(self.educube_connection, message)
+        
+        try:
+            msg = json.loads(message)
+        except json.JSONDecodeError:
+            errmsg = ('Received message could not be parsed as valid JSON'
+                      +'\n{msg}'.format(msg=message)                      )
+            logger.exception(errmsg, exc_info=True)
+            return 
+
+        if msg['msgtype'] == 'command':
+            board    = msg['msgcontent'].get('board'   , None)
+            cmd      = msg['msgcontent'].get('command' , None)
+            settings = msg['msgcontent'].get('settings', None)
+
+            try:
+                handle_command(self.educube_connection, board, cmd, settings) 
+            except:
+                errmsg = ('Exception encountered while processing command '
+                          +'with arguments:\n'
+                          +'board={board}, cmd={cmd}, settings={settings}'\
+                           .format(board=board, cmd=cmd, settings=settings))
+                logger.exception(errmsg, exc_info=True)
+                return
+
+        else:
+            logger.warning('Unknown msgtype:{}'.format(msg['msgtype']))
+
+
+#        if message.startswith("C|"):
+#            send_command(self.educube_connection, message)
 #            if not message.endswith("|T"):
 #                time.sleep(0.1) # some delay
 #                send_command("C|CDH|T") # Force telem request
@@ -83,6 +125,21 @@ class ClientSocket(websocket.WebSocketHandler):
     def on_close(self):
         print("WebSocket closed")
         GLOBALS['sockets'].remove(self)
+
+# Message parser
+def handle_command(educube, board, cmd, settings):
+    """."""
+    if cmd == 'T':
+        educube.send_request_telem(board=board)
+
+    elif board == 'ADC' and cmd == 'MAG':
+        educube.send_set_magtorquer(**settings)
+
+    elif board == 'ADC' and cmd == 'REACT':
+        educube.send_set_reaction_wheel(**settings)
+
+    elif board == 'EXP' and cmd =='HEAT':
+        educube.send_set_thermal_panel(**settings)
 
 
 ##########################
@@ -103,7 +160,7 @@ def call_board_updates(educube_connection):
         for telem in telemetry_packets:
             try:
                 telemetry = parser.parse_telemetry(telem)
-                print(display.display_color_json(telemetry))
+#                print(display.display_color_json(telemetry))
                 ws_send(json.dumps(telemetry))
             except Exception as e:
                 logger.exception("Telemetry badly formed: %s\n%s" % (telem, e))

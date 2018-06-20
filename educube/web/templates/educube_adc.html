@@ -21,23 +21,29 @@
             <label for="outfile">
               MagTorquers:
             </label>
-            <button data-board="ADC" data-cmd="MAG|X|-" 
+            <button data-board="ADC" data-cmd="MAG" 
+                data-settings='{"axis":"X", "sign":"-"}' 
                 class="educube_action btn btn-sm btn-danger">X-</button>
-            <button data-board="ADC" data-cmd="MAG|X|0" 
+            <button data-board="ADC" data-cmd="MAG"
+                data-settings='{"axis":"X", "sign":"0"}' 
                 class="educube_action btn btn-sm btn-default">Off</button>
-            <button data-board="ADC" data-cmd="MAG|X|+" 
+            <button data-board="ADC" data-cmd="MAG"
+                data-settings='{"axis":"X", "sign":"+"}' 
                 class="educube_action btn btn-sm btn-success">X+</button>
             |
-            <button data-board="ADC" data-cmd="MAG|Y|-" 
+            <button data-board="ADC" data-cmd="MAG"
+                data-settings='{"axis":"Y", "sign":"-"}' 
                 class="educube_action btn btn-sm btn-danger">Y-</button>
-            <button data-board="ADC" data-cmd="MAG|Y|0" 
+            <button data-board="ADC" data-cmd="MAG"
+                data-settings='{"axis":"Y", "sign":"0"}' 
                 class="educube_action btn btn-sm btn-default">Off</button>
-            <button data-board="ADC" data-cmd="MAG|Y|+" 
+            <button data-board="ADC" data-cmd="MAG"
+                data-settings='{"axis":"Y", "sign":"+"}' 
                 class="educube_action btn btn-sm btn-success">Y+</button>
           </div>
         </div>
         <div class="col-sm-4 col-md-2">
-          <button data-board="ADC" data-cmd="T" 
+          <button data-board="ADC" data-cmd="T" data-settings="null"
               class="educube_action btn btn-sm btn-info btn-block pull-right">
             Request Telemetry
           </button>
