@@ -251,8 +251,8 @@ class EducubeConnection():
             raise EducubeError(errmsg)
 
         cmd = ('C|ADC|REACT|{sgn}|{mag}'\
-               .format(sgn=('+' if sgn >= 0 else '-'),
-                       mag=fabs(val)                   ))
+               .format(sgn=('+' if val >= 0 else '-'),
+                       mag=int(fabs(val))             ))
         self.send_command(cmd)
 
     def send_set_thermal_panel(self, panel, val):
