@@ -2,8 +2,7 @@ $(document).ready(function () {
     hook_commands();
 });
 
-/*
- * send_command
+/* send_command
  *
  */
 function send_command(command, board, settings){
@@ -17,10 +16,11 @@ function send_command(command, board, settings){
 	};
 
     try {
-        console.log(cmd_packet)
-        websocket.send(JSON.stringify(cmd_packet))
+        console.log(cmd_packet);
+        var cmd_string = JSON.stringify(cmd_packet);
+	websocket.send(cmd_string);
         provide_notice({
-            "message" : "Command sent ("+cmdstring+")", 
+            "message" : "Command sent ("+cmd_string+")", 
             "type"    : "success"
         });
     }
@@ -30,8 +30,7 @@ function send_command(command, board, settings){
     }
 }
 
-/*
- * hook_commands
+/* hook_commands
  *
  */ 
 function hook_commands(){

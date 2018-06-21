@@ -31,19 +31,22 @@ class TelemetryParser(object):
     def __init__(self):
         pass
 
-    def parse_telemetry(self, telem):
+    def parse_telemetry(self, timestamp, telemetry):
         logger.info("Parsing telemetry")
-        telem_parts = telem['data'].decode('utf8').split("|")
+        telem_parts = telemetry.decode('utf8').split("|")
+
         if len(telem_parts) < 3:
             logger.warning("Empty telemetry")
             return
+
         telem_type, telem_board = telem_parts[:2]
         telem_struct = {
-            "time": telem['time'],
+            "time": timestamp,
             "type": telem_type,
             "board": telem_board,
             "telem": "|".join(telem_parts[2:])
         }
+
         if telem_type == self.TELEM_IDENTIFER:
             for bname, board in self.BOARD_CONFIG.items():
                 if telem_board == board['ID']:
@@ -53,7 +56,8 @@ class TelemetryParser(object):
                         telem_struct['data'] = parsed_telem
                         self.last_board_telemetry[board['ID']] = parsed_telem
                     else:
-                        logger.error("Wrong parser defined for %s board: %s" % (bname, board['parser']))
+                        errmsg = ("Wrong parser defined for {bname} board: {parser}".format(bname=bname, parser=board['parser']))
+                        logger.error(errmsg)
         return telem_struct
 
     def get_ina_name(self, address):

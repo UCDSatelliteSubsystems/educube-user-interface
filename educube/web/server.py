@@ -114,13 +114,6 @@ class ClientSocket(websocket.WebSocketHandler):
 
         else:
             logger.warning('Unknown msgtype:{}'.format(msg['msgtype']))
-
-
-#        if message.startswith("C|"):
-#            send_command(self.educube_connection, message)
-#            if not message.endswith("|T"):
-#                time.sleep(0.1) # some delay
-#                send_command("C|CDH|T") # Force telem request
         
     def on_close(self):
         print("WebSocket closed")
@@ -155,15 +148,18 @@ def ws_send(data):
 #######################
 def call_board_updates(educube_connection):
     def _call_board_updates():
-        logger.info("Calling update")
+#        logger.debug("Updating telemetry (WebServer)")
         telemetry_packets = educube_connection.get_telemetry()
-        for telem in telemetry_packets:
+        for timestamp, telemetry in telemetry_packets:
             try:
-                telemetry = parser.parse_telemetry(telem)
-#                print(display.display_color_json(telemetry))
+                telemetry = parser.parse_telemetry(timestamp, telemetry)
+                logger.debug("Updating telemetry: {}"\
+                             .format(json.dumps(telemetry)))
+
                 ws_send(json.dumps(telemetry))
             except Exception as e:
-                logger.exception("Telemetry badly formed: %s\n%s" % (telem, e))
+                errmsg = "Telemetry badly formed: {t}".format(t=telemetry)
+                logger.exception(errmsg, exc_info=True)
     return _call_board_updates
 
 def send_command(educube_connection, cmd):

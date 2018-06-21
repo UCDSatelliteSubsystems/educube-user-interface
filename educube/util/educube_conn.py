@@ -63,7 +63,7 @@ class EducubeConnection():
 
     last_telem_request = 0
     telemetry_buffer = []
-    telem_raw_format = "{timestamp}\t{telemetry}\n"
+    telem_log_format = "{timestamp}\t{telemetry}\n"
 
     def __init__(self, conn_type, portname, board, baud=9600, fake=False,
                  output_path=None, read_interval_s=5, 
@@ -170,13 +170,18 @@ class EducubeConnection():
 
     def send_request_telem(self, board=None):
         """
-        Send the telemetry request command [C|CDH|T]
+        Send the telemetry request command 
 
         """
-        logger.debug("Requesting telemetry from board {id}"\
-                     .format(id=self.board_id)              )
-        command = self.format_command(self.telem_request_command)
-        self.send_command(command)
+        
+        if board is None:
+            board = self.board_id
+
+        logger.debug("Requesting telemetry from board {id}".format(id=board))
+
+        cmd = 'C|{board}|T'.format(board=board)
+        self.send_command(cmd)
+
         # update last_telem_request time
         self.last_telem_request = time.time()
 
@@ -196,7 +201,7 @@ class EducubeConnection():
             errmsg = "Encountered Error while sending command", 
             logger.exception(errmsg, exc_info=True)
 
-        cmd_string = self.telem_raw_format\
+        cmd_string = self.telem_log_format\
             .format(timestamp=millis(),
                     telemetry="COMMAND_SENT: {cmd}".format(cmd=cmd_structure))
         try:
@@ -278,6 +283,7 @@ class EducubeConnection():
     ################
 
     def get_telemetry(self):
+        """."""
         with self.lock:   # is this lock needed???
             telemetry = copy.deepcopy(self.telemetry_buffer)
             self.telemetry_buffer = []
@@ -285,6 +291,7 @@ class EducubeConnection():
         return telemetry
 
     def format_command(self, cmd, board=None):
+        """."""
         if not board:
             board=self.board_id
             
@@ -297,8 +304,9 @@ class EducubeConnection():
         return formatted_command
         
     def write_telemetry_to_log(self, telemetry_buffer):
+        """."""
         for timestamp, telemetry in telemetry_buffer:
-            self.output_file.write(self.telem_raw_format.format(
+            self.output_file.write(self.telem_log_format.format(
                 timestamp = timestamp,
                 telemetry = telemetry ))
 
