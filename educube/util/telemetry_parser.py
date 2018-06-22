@@ -26,6 +26,23 @@ class TelemetryParser(object):
     }
     TELEM_IDENTIFER = "T"
 
+    INA_NAMES = {
+         64 : "Solar"  ,
+         65 : "Charger",
+         66 : "VBatt"  ,
+         67 : "+5V"    ,
+         73 : "+3.3V"  ,
+         68 : "Radio"  ,
+         69 : "SW1-5V" ,
+         72 : "SW1-3V" ,
+         70 : "SW2-5V" ,
+         74 : "SW2-3V" ,
+         71 : "SW3-5V" ,
+         75 : "SW3-3V" ,
+         }
+
+
+
     last_board_telemetry = {}
     
     def __init__(self):
@@ -60,31 +77,8 @@ class TelemetryParser(object):
                         logger.error(errmsg)
         return telem_struct
 
-    def get_ina_name(self, address):
-        if address == 64:
-            return "Solar"
-        if address == 65:
-            return "Charger"
-        if address == 66:
-            return "VBatt"
-        if address == 67:
-            return "+5V"
-        if address == 73:
-            return "+3.3V"
-        if address == 68:
-            return "Radio"
-        if address == 69:
-            return "SW1-5V"
-        if address == 72:
-            return "SW1-3V"
-        if address == 70:
-            return "SW2-5V"
-        if address == 74:
-            return "SW2-3V"
-        if address == 71:
-            return "SW3-5V"
-        if address == 75:
-            return "SW3-3V"
+
+
 
     def get_command_id_for_eps_ina(self, address):
         if address == 68:
@@ -108,12 +102,13 @@ class TelemetryParser(object):
             ctelem_parts = chip_telem.split(",")
             if ctelem_parts[0] == "I":
                 ina_telem = {
-                    "name": self.get_ina_name(int(ctelem_parts[1])),
+                    "name": INA_NAMES[ctelem_parts[1]],
                     "address": ctelem_parts[1],
                     "bus_V": ctelem_parts[2],
                     "current_mA": ctelem_parts[3],
                     "switch_enabled": 1,
-                    "power_mW": "%.2f" % (float(ctelem_parts[2])*float(ctelem_parts[3])),
+                    "power_mW": "{:.2f}".format(float(ctelem_parts[2])
+                                                * float(ctelem_parts[3])),
                     "command_id": self.get_command_id_for_eps_ina(int(ctelem_parts[1]))
                 }
                 telem_structure["INA"].append(ina_telem)
@@ -134,8 +129,9 @@ class TelemetryParser(object):
             if ctelem_parts[0] == "C":
                 telem_structure["CHARGING"] = (ctelem_parts[1] == 1)
 
-        # Now we go back over the telemetry to add in the status of the INA switches
-        # We can't do it in the same loop in case (somehow) the switch state comes before the switch power telemtry
+        # Now we go back over the telemetry to add in the status of the INA
+        # switches We can't do it in the same loop in case (somehow) the
+        # switch state comes before the switch power telemtry
 
         def add_ina_switch_state(ina_name, switch_state):
             address_ids = []
@@ -243,8 +239,8 @@ class TelemetryParser(object):
                     "LON": ctelem_parts[3],
                 }
                 telem_structure["GPS_FIX"] = {
-                    "LAT": float(ctelem_parts[2])/10000000.,
-                    "LON": float(ctelem_parts[3])/10000000.,
+                    "LAT": float(ctelem_parts[2])/1e7,
+                    "LON": float(ctelem_parts[3])/1e7,
                 }
                 telem_structure["GPS_META"] = {
                     "HDOP": ctelem_parts[4],
@@ -299,12 +295,13 @@ class TelemetryParser(object):
                 telem_structure["THERM_PWR"]["P2"] = ctelem_parts[1]
             if ctelem_parts[0] == "I":
                 ina_telem = {
-                    "name": self.get_exp_ina_name(int(ctelem_parts[1])),
+                    "name"   : self.get_exp_ina_name(int(ctelem_parts[1])),
                     "address": ctelem_parts[1],
                     "shunt_V": ctelem_parts[2],
-                    "bus_V": ctelem_parts[3],
+                    "bus_V"  : ctelem_parts[3],
                     "current_mA": ctelem_parts[4],
-                    "power_mW": "%.2f" % (float(ctelem_parts[4]) * float(ctelem_parts[3])),
+                    "power_mW": "{:.2f}".format(float(ctelem_parts[4])
+                                                * float(ctelem_parts[3])),
                 }
                 telem_structure["INA"].append(ina_telem)
             if ctelem_parts[0] == "P1A":

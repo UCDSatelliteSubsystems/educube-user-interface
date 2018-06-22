@@ -1,3 +1,20 @@
+"""
+educube/web/server.py
+
+
+Allows control of the EduCube via a web interface.
+
+
+There are two key functions: handle_commands receives commands from the web
+interface and uses them to call the appropriate methods of the EduCube
+controller; and handle_telemetry_updates collects new telemetry from the
+EduCube and passes them as JSON messages over the WebSocket to the web
+interface.
+
+"""
+
+
+
 import os
 import json
 import time
@@ -25,11 +42,11 @@ dirname = os.path.dirname(__file__)
 STATIC_PATH = os.path.join(dirname, 'static')
 TEMPLATE_PATH = os.path.join(dirname, 'templates')
 
-GLOBALS={
-    'sockets': [],
-}
+#GLOBALS={
+#    'sockets': [],
+#}
 
-educube_connection = None
+#educube_connection = None
 parser = TelemetryParser()
 
 ##########################
@@ -39,7 +56,7 @@ class Application(tornado.web.Application):
     def __init__(self, educube_connection):
         handlers = [
             (r"/", MainHandler),
-            (r"/socket", ClientSocket, 
+            (r"/socket", EducubeClientSocket, 
              {'educube_connection' : educube_connection}),
             # (r"/push", HandleCommand),
         ]
@@ -61,15 +78,26 @@ class MainHandler(tornado.web.RequestHandler):
         self.render("educube.html", title="EduCube")
 
 
-class ClientSocket(websocket.WebSocketHandler):
+class EducubeClientSocket(websocket.WebSocketHandler):
     """."""
+    sockets = set()
+
     def __init__(self, application, request, educube_connection, **kwargs):
-        self.educube_connection = educube_connection
+        self.educube = educube_connection
+
         websocket.WebSocketHandler.__init__(self, application, request, 
                                             **kwargs                   )
 
+        # Startup periodic calls
+        self.loop = tornado.ioloop.PeriodicCallback(
+            callback      = handle_telemetry_updates(self.educube, 
+                                                     self.sockets ),
+            callback_time = 500                                     )
+        self.loop.start()
+
+
     def open(self):
-        GLOBALS['sockets'].append(self)
+        self.sockets.add(self)
         print("WebSocket opened")
 
     def on_message(self, message):
@@ -113,13 +141,15 @@ class ClientSocket(websocket.WebSocketHandler):
                 return
 
         else:
-            logger.warning('Unknown msgtype:{}'.format(msg['msgtype']))
+            logger.warning('Unknown msgtype: {}'.format(msg['msgtype']))
         
     def on_close(self):
         print("WebSocket closed")
-        GLOBALS['sockets'].remove(self)
+        self.sockets.remove(self)
 
+########################
 # Message parser
+########################
 def handle_command(educube, board, cmd, settings):
     """."""
     if cmd == 'T':
@@ -135,35 +165,26 @@ def handle_command(educube, board, cmd, settings):
         educube.send_set_thermal_panel(**settings)
 
 
-##########################
-# WebSocket Handlers
-##########################
-def ws_send(data):
-    for socket in GLOBALS['sockets']:
-        socket.write_message(data)
-
-
-#######################
-# Telemetry updates
-#######################
-def call_board_updates(educube_connection):
-    def _call_board_updates():
-#        logger.debug("Updating telemetry (WebServer)")
-        telemetry_packets = educube_connection.get_telemetry()
+def handle_telemetry_updates(educube, sockets):
+    """."""
+    def _handle_telemetry_updates():
+        telemetry_packets = educube.get_telemetry()
         for timestamp, telemetry in telemetry_packets:
             try:
-                telemetry = parser.parse_telemetry(timestamp, telemetry)
+                t = parser.parse_telemetry(timestamp, telemtry)
                 logger.debug("Updating telemetry: {}"\
-                             .format(json.dumps(telemetry)))
-
-                ws_send(json.dumps(telemetry))
-            except Exception as e:
+                             .format(json.dumps(t))   )
+            except:
                 errmsg = "Telemetry badly formed: {t}".format(t=telemetry)
                 logger.exception(errmsg, exc_info=True)
-    return _call_board_updates
 
-def send_command(educube_connection, cmd):
-    educube_connection.send_command(cmd)
+            try:
+                for socket in sockets:
+                    socket.write_message(json.dumps(telemetry))
+            except:
+                errmsg = "Error sending telemetry over websockets"
+                logger.exception(errmsg, exc_info=True)
+    return _call_board_updates
 
 
 #######################
@@ -182,8 +203,7 @@ def start_webserver(connection):
         application = Application(conn)
         http_server = tornado.httpserver.HTTPServer(application)
         http_server.listen(PORT)
-        # Startup periodic calls
-        tornado.ioloop.PeriodicCallback(call_board_updates(conn), 500).start()
+
         webbrowser.open_new(edu_url)
 
         try:
