@@ -1,13 +1,27 @@
 #import os
-#import json
+import json
 from collections import namedtuple
 
 import logging
 logger = logging.getLogger(__name__)
 
 
-Telemetry = namedtuple('Telemetry', ('time', 'type', 'board', 'telem', 'data'))
+#Telemetry = namedtuple('Telemetry', ('time', 'type', 'board', 'telem', 'data'))
 
+TELEMETRY_FIELDS = ('time', 'type', 'board', 'telem', 'data')
+
+class Telemetry(namedtuple('Telemetry', TELEMETRY_FIELDS):
+    """."""
+    def _asJSON(self, remove_null=False):
+        """."""
+        if remove_null:
+            return json.dumps(remove_value_none(self._asdict()))
+        else:
+            return json.dumps(self._asdict())
+
+
+# 
+# 
 ADC_FIELDS = ('SUN_SENSORS', #
               'SUN_DIR'    , #
               'MAGNO_TORQ' , #
@@ -34,9 +48,6 @@ EXP_FIELDS = ('THERM_PWR'  , #
               'PANEL_TEMP' , #
               )
 
-
-
-# implement a BoardTelemetryBase offering methods for converting to JSON?
 ADCTelemetry = namedtuple('ADCTelemetry', ADC_FIELDS)
 CDHTelemetry = namedtuple('CDHTelemetry', CDH_FIELDS)
 EPSTelemetry = namedtuple('EPSTelemetry', EPS_FIELDS)
@@ -337,60 +348,102 @@ class TelemetryParserException(Exception):
 
 class TelemetryParser(object):
 
-    BOARD_CONFIG = {
-        "EPS": {
-            "ID": "EPS",
-            "parser": 'parse_eps_telem'
-        },
-        "CDH": {
-            "ID": "CDH",
-            "parser": 'parse_cdh_telem'
-        },
-        "EXP": {
-            "ID": "EXP",
-            "parser": 'parse_exp_telem'
-        },
-        "ADC": {
-            "ID": "ADC",
-            "parser": 'parse_adc_telem'
-        }
-    }
-    TELEM_IDENTIFER = "T"
+#    BOARD_CONFIG = {
+#        "EPS": {
+#            "ID": "EPS",
+#            "parser": 'parse_eps_telem'
+#        },
+#        "CDH": {
+#            "ID": "CDH",
+#            "parser": 'parse_cdh_telem'
+#        },
+#        "EXP": {
+#            "ID": "EXP",
+#            "parser": 'parse_exp_telem'
+#        },
+#        "ADC": {
+#            "ID": "ADC",
+#            "parser": 'parse_adc_telem'
+#        }
+#    }
 
+    board_parsers = {
+        "ADC" : parse_adc_telem,
+        "CDH" : parse_cdh_telem,
+        "EPS" : parse_eps_telem,
+        "EXP" : parse_exp_telem,
+    }
+
+    TELEM_IDENTIFER = "T"
 
     last_board_telemetry = {}
     
-    def __init__(self):
-        pass
+#    def __init__(self):
+#        pass
 
+    # -- changed to take telemetry as a unicode string, not bytes.
+    # -- shouldn't the check that this is telemetry happen before the parser?
+    #    Therefore, isn't _telem_type always just going to be T?
+    # -- changed the creation of telem_struct (renamed out) to the end, and 
+    #    made explicitly into a Telemetry object
+    # -- renamed the telem_parts breakdowns to make things clearer
+    # -- what is the point of last_board_telemetry??? We never seem to do 
+    #    anything with this stored telemetry?
+    # -- removed self.BOARD_CONFIG and replaced with self.board_parser, which 
+    #    is a dictionary that stores the parser functions. I don't see why we 
+    #    need the board ID options -- those are what we know already?
+    # -- changed so that we don't iterate over the possible telem boards, but 
+    #    just look up the one we need. 
     def parse_telemetry(self, timestamp, telemetry):
-        logger.info("Parsing telemetry")
-        telem_parts = telemetry.decode('utf8').split("|")
+        """."""
 
-        if len(telem_parts) < 3:
+        logger.info("Parsing telemetry")
+#        telem_parts = telemetry.decode('utf8').split("|")
+        _telem_parts = telemetry.split("|")
+
+        if len(_telem_parts) < 3:
             logger.warning("Empty telemetry")
             return
 
-        telem_type, telem_board = telem_parts[:2]
-        telem_struct = {
-            "time": timestamp,
-            "type": telem_type,
-            "board": telem_board,
-            "telem": "|".join(telem_parts[2:])
-        }
+        _telem_type, _telem_board, *_chip_telem_parts = _telem_parts
+#        telem_struct = {
+#            "time": timestamp,
+#            "type": telem_type,
+#            "board": telem_board,
+#            "telem": "|".join(telem_parts[2:])
+#        }
+        
+        try:
+            _parser_function = self.board_parser[_telem_board]
+        except KeyError:
+            # unrecognised board type
+            return
 
-        if telem_type == self.TELEM_IDENTIFER:
-            for bname, board in self.BOARD_CONFIG.items():
-                if telem_board == board['ID']:
-                    parser = getattr(self, board['parser'], None)
-                    if parser:
-                        parsed_telem = parser(telem_parts[2:])
-                        telem_struct['data'] = parsed_telem
-                        self.last_board_telemetry[board['ID']] = parsed_telem
-                    else:
-                        errmsg = ("Wrong parser defined for {bname} board: {parser}".format(bname=bname, parser=board['parser']))
-                        logger.error(errmsg)
-        return telem_struct
+        try:
+            _parsed_telemetry = _parser_function(chip_telem_parts)
+        except:
+            # unhandled parsing error
+            return
+
+
+#        if telem_type == self.TELEM_IDENTIFER:
+#            for bname, board in self.BOARD_CONFIG.items():
+#                if telem_board == board['ID']:
+#                    parser = getattr(self, board['parser'], None)
+#                    if parser:
+#                        parsed_telem = parser(telem_parts[2:])
+#                        telem_struct['data'] = parsed_telem
+#                        self.last_board_telemetry[board['ID']] = parsed_telem
+#                    else:
+#                        errmsg = ("Wrong parser defined for {bname} board: {parser}".format(bname=bname, parser=board['parser']))
+#                        logger.error(errmsg)
+
+        out = Telemetry(time  = timestamp                  ,
+                        type  = _telem_type                ,
+                        board = _telem_board               ,
+                        telem = "|".join(_chip_telem_parts),
+                        data  = _parsed_telemetry           )
+        return out
 
 
 

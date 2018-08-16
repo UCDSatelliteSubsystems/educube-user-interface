@@ -28,7 +28,7 @@ from tornado import websocket
 #from educube.util import display as display
 from educube.util import educube_conn as educonn
 
-from educube.util.telemetry_parser import TelemetryParser
+#from educube.util.telemetry_parser import TelemetryParser
 
 import logging
 logger = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ TEMPLATE_PATH = os.path.join(dirname, 'templates')
 #}
 
 #educube_connection = None
-parser = TelemetryParser()
+#parser = TelemetryParser()   # removed 2018-08-16 -- now in educube_connection
 
 ##########################
 # Main Tornado Application
@@ -165,26 +165,34 @@ def handle_command(educube, board, cmd, settings):
         educube.send_set_thermal_panel(**settings)
 
 
-def handle_telemetry_updates(educube, sockets):
-    """."""
-    def _handle_telemetry_updates():
-        telemetry_packets = educube.get_telemetry()
-        for timestamp, telemetry in telemetry_packets:
-            try:
-                t = parser.parse_telemetry(timestamp, telemtry)
-                logger.debug("Updating telemetry: {}"\
-                             .format(json.dumps(t))   )
-            except:
-                errmsg = "Telemetry badly formed: {t}".format(t=telemetry)
-                logger.exception(errmsg, exc_info=True)
 
+# should this be moved to become a method of EducubeClientSocket??? Both
+# educube and sockets could then be provided as attributes. 
+# the parser should be moved into Educube
+def handle_telemetry_updates(educube, sockets):
+    """Creates a function to be called periodically to send updated telemetry. 
+
+    """
+    def _handle_telemetry_updates():
+        telemetry_packets = educube.parse_telemetry()
+        for _telemetry in telemetry_packets:
+#            try:
+#                t = parser.parse_telemetry(timestamp, telemetry)
+#            except:
+#                errmsg = "Telemetry badly formed: {t}".format(t=telemetry)
+#                logger.exception(errmsg, exc_info=True)
+#                continue
             try:
+                _telemetry_json = _telemetry._asJSON()
+                logger.debug("Updating telemetry: {}"\
+                             .format(_telemetry_json))
                 for socket in sockets:
-                    socket.write_message(json.dumps(telemetry))
+                    socket.write_message(_telemetry_json)
             except:
                 errmsg = "Error sending telemetry over websockets"
                 logger.exception(errmsg, exc_info=True)
-    return _call_board_updates
+
+    return _handle_telemetry_updates
 
 
 #######################

@@ -14,6 +14,10 @@ from math import fabs
 import logging
 logger = logging.getLogger(__name__)
 
+from educube.util.telemetry_parser import TelemetryParser
+parser = TelemetryParser()   # should this be a) replaced by a function or b)
+                             # an object attribute of the EducubeConnection
+                             # object?
 
 def millis():
     """Current system time in milliseconds."""
@@ -122,8 +126,6 @@ class EducubeConnection():
         baud : int
             
         output_path : str
-            
-
 
         """
 
@@ -358,24 +360,36 @@ class EducubeConnection():
 
 
     ################
-    # convenience methods
+    # methods to return telemetry
     ################
 
-    def get_telemetry(self):
+    def read_telemetry_buffer(self):
         """."""
         with self.lock:   # is this lock needed???
-            telemetry = copy.deepcopy(self.telemetry_buffer)
+            raw_telemetry = copy.deepcopy(self.telemetry_buffer)
             self.telemetry_buffer = []
-        self.write_telemetry_to_log(telemetry)
-        return telemetry
+        self._write_telemetry_to_file(raw_telemetry)
+        return raw_telemetry
 
-        
-    def write_telemetry_to_log(self, telemetry_buffer):
+    # NEED TO HANDLE DECODING ERRORS ROBUSTLY???       
+    def _write_telemetry_to_file(self, telemetry_buffer):
         """."""
-        for timestamp, telemetry in telemetry_buffer:
+        for _timestamp, _telemetry_bytes in telemetry_buffer:
             self.output_file.write(self.telem_log_format.format(
-                timestamp = timestamp                        ,
-                telemetry = telemetry.decode('utf-8').strip() ))
+                timestamp = _timestamp                              ,
+                telemetry = _telemetry_bytes.decode('utf-8').strip() ))
+
+    # WHAT ABOUT UNCAUGHT PARSING ERRORS???
+    def parse_telemetry(self):
+        """."""
+        _raw_telemetry = self.read_telemetry_buffer()
+
+        parsed_telemetry = [
+            parser.parse_telemetry(_timestamp                      , 
+                                   _telemetry_bytes.decode('utf-8') ) 
+            for _timestamp, _telemetry_bytes in _raw_telemetry       ]
+ 
+        return parsed_telemetry
 
  
 
