@@ -87,17 +87,21 @@ function parse_telemetry(telemetry){
         var telem_template;
         var telem_dom;
         if (telemetry.board == "EPS"){
-            telem_template = "#tmpl-eps_telem_view"; telem_dom = "#board_eps .telem_content";
+            telem_template = "#tmpl-eps_telem_view"; 
+            telem_dom = "#board_eps .telem_content";
             eps_update_viz();
         }  
         if (telemetry.board == "ADC"){
-            telem_template = "#tmpl-adc_telem_view"; telem_dom = "#board_adc .telem_content";
+            telem_template = "#tmpl-adc_telem_view"; 
+            telem_dom = "#board_adc .telem_content";
         }  
         if (telemetry.board == "EXP"){
-            telem_template = "#tmpl-exp_telem_view"; telem_dom = "#board_exp .telem_content";
+            telem_template = "#tmpl-exp_telem_view"; 
+            telem_dom = "#board_exp .telem_content";
         }  
         if (telemetry.board == "CDH"){
-            telem_template = "#tmpl-cdh_telem_view"; telem_dom = "#board_cdh .telem_content";
+            telem_template = "#tmpl-cdh_telem_view"; 
+            telem_dom = "#board_cdh .telem_content";
             cdh_update_map();
         }
         var telem_html = $(telem_template).tmpl(telemetry.data);
@@ -108,16 +112,24 @@ function parse_telemetry(telemetry){
 
 function update_telem_indicators(){
     // ADC 
-    var status_html = $('#tmpl-telem_status').tmpl({"telem":telemetry_store['ADC']});
+    var status_html = $('#tmpl-telem_status').tmpl({
+        "telem" : telemetry_store['ADC']
+     });
     $('#telem_status_adc').html(status_html);
     // EXP 
-    var status_html = $('#tmpl-telem_status').tmpl({"telem":telemetry_store['EXP']});
+    var status_html = $('#tmpl-telem_status').tmpl({
+        "telem" : telemetry_store['EXP']
+     });
     $('#telem_status_exp').html(status_html);
     // CDH 
-    var status_html = $('#tmpl-telem_status').tmpl({"telem":telemetry_store['CDH']});
+    var status_html = $('#tmpl-telem_status').tmpl({
+        "telem" : telemetry_store['CDH']
+    });
     $('#telem_status_cdh').html(status_html);
     // EPS 
-    var status_html = $('#tmpl-telem_status').tmpl({"telem":telemetry_store['EPS']});
+    var status_html = $('#tmpl-telem_status').tmpl(
+        {"telem":telemetry_store['EPS']
+    });
     $('#telem_status_eps').html(status_html);
 }
 

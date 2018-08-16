@@ -56,10 +56,22 @@ class EducubeConnectionThread(Thread):
 
                 _buffer.extend(self.master.connection.read())
                 if _buffer.endswith(self.eol):
-                    telem = (millis(), bytes(_buffer))
-                    self.master.telemetry_buffer.append(telem)
-                    logger.debug("Received telemetry: {time} : {data}"\
-                                 .format(time=telem[0],data=telem[1])  )
+                    if is_telemetry(_buffer):
+                        telem = (millis(), bytes(_buffer))
+                        self.master.telemetry_buffer.append(telem)
+                        logger.debug("Received telemetry: {time} : {data}"\
+                                     .format(time=telem[0],data=telem[1])  )
+                    elif is_debug(_buffer):
+                        logmsg = ("Received {board} DEBUG message:\n"
+                                  +"        ==> {buffer}"
+                                  ).format(board=self.master.board_id,
+                                           buffer=_buffer)
+                        logger.debug(logmsg)
+                    else:
+                        logmsg = ('Received unrecognised message\n'
+                                  +"        ==> {buff}".format(buff=_buffer))
+                        logger.warning(logmsg)
+
                     _buffer = bytearray()
 
             # check whether it is time to ask for more telemetry
@@ -69,6 +81,11 @@ class EducubeConnectionThread(Thread):
 
         logger.info("EducubeConnectionThread.run has ended")
 
+def is_telemetry(buffer):
+    return buffer.lstrip().startswith(b'T|')
+
+def is_debug(buffer):
+    return buffer.lstrip().startswith(b'DEBUG|')
 
 class EducubeConnection():
     """
