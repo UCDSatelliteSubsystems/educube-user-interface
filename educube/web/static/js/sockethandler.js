@@ -19,7 +19,8 @@ function setup_websocket() {
 
     function _message_handler (event){
         _message = JSON.parse(event.data);
-        console.log('Message received: '+_message);
+	//        console.log('Message received: %o' _message);
+        console.log('Message received: '+event.data);
     
         if (_message.msgtype === 'telemetry'){
             handle_received_telemetry(_message.msgcontent);

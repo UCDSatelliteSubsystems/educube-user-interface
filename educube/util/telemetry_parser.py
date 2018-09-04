@@ -6,12 +6,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-#Telemetry = namedtuple('Telemetry', ('time', 'type', 'board', 'telem', 'data'))
-
 TELEMETRY_FIELDS = ('time', 'type', 'board', 'telem', 'data')
 
 class Telemetry(namedtuple('Telemetry', TELEMETRY_FIELDS)):
-    """Telemetry information
+    """
+    Container for information about a Telemetry packet
+
+    Extends namedtuple to simplify conversion to JSON. 
 
     """
     def _as_JSON(self, remove_null=False):
@@ -274,21 +275,22 @@ def parse_eps_telem(telem):
         else:
             _chip_telem[_chip_telem_id] = _chip_telem_parts
 
+    # handle EPS INA chips. 
     ina_chips = (val 
                  for key, val in _chip_telem.items() if key.startswith('I'))
     # WHY IS switch_enabled = 1 HARD CODED???
-    try
-    ina_telem = [INATelem(name           = EPS_INA_NAME[ina_parts[0]]      ,
-                          address        = ina_parts[0]                    ,   
-                          shunt_V        = None                            ,
-                          bus_V          = ina_parts[1]                    ,
-                          current_mA     = ina_parts[2]                    ,
-                          power_mW       = '{:.2f}'.format(                
-                                              float(ina_parts[1]) * 
-                                              float(ina_parts[2])  )       ,
-                          switch_enabled = 1                               ,
-                          command_id     = EPS_INA_COMMAND_ID[ina_parts[0]] )
-                 for ina_parts in ina_chips                                 ]
+    ina_telem = [
+        INATelem(name           = EPS_INA_NAME.get(ina_parts[0], None),
+                 address        = ina_parts[0]                              ,
+                 shunt_V        = None                                      ,
+                 bus_V          = ina_parts[1]                              ,
+                 current_mA     = ina_parts[2]                              ,
+                 power_mW       = '{:.2f}'.format(float(ina_parts[1]) *
+                                                  float(ina_parts[2])  )    ,
+                 switch_enabled = 1                                         ,
+                 command_id     = EPS_INA_COMMAND_ID.get(ina_parts[0], None),
+                 )
+        for ina_parts in ina_chips                                           ]
 
     # 'temp', 'voltage', 'current'
     ds2438_telem = DS2438(*_chip_telem['DA'])
@@ -392,7 +394,7 @@ class TelemetryParser(object):
         """."""
 
         logger.info("Parsing telemetry")
-        _telem_parts = telemetry.split("|")
+        _telem_parts = telemetry.strip().split("|")
 
         if len(_telem_parts) < 3:
             logger.warning("Empty telemetry")
