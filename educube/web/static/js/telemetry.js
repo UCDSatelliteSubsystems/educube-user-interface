@@ -1,5 +1,5 @@
-var websocket;
-var websocket_addr="ws://localhost:18888/socket";
+//var websocket;
+//var websocket_addr="ws://localhost:18888/socket";
 
 var notification_stack = {
     "dir1": "down", 
@@ -42,35 +42,36 @@ function parse_existing(){
     parse_telemetry(telemetry_store['CDH']);
 }
 
-function setup_notifications(){
-    PNotify.prototype.options.styling = "bootstrap3";
-    PNotify.prototype.options.delay = 500;
-}
+//function setup_notifications(){
+//    PNotify.prototype.options.styling = "bootstrap3";
+//    PNotify.prototype.options.delay = 500;
+//}
 
-function setup_websocket(){
-    websocket = new WebSocket(websocket_addr);
-    websocket.onmessage = function(event) {
-       var telem_string = event.data;
-       var telemetry = JSON.parse(telem_string);
-       console.log("Received new telemetry from educube");
-       console.log(telemetry);
-       show_telemetry(telemetry);
-       parse_telemetry(telemetry);
-    }
-}
+//function setup_websocket(){
+//    websocket = new WebSocket(websocket_addr);
+//    websocket.onmessage = function(event) {
+//       var telem_string = event.data;
+//       var telemetry = JSON.parse(telem_string);
+//       console.log("Received new telemetry from educube");
+//       console.log(telemetry);
+//       show_telemetry(telemetry);
+//       parse_telemetry(telemetry);
+//    }
+//}
 
 function show_telemetry(telemetry) {
-    new PNotify({
-        text: "[" + telemetry.board + "] ("+ telemetry.type +") " + telemetry.telem,
-        context: $("#telemetry_block"),
-        stack: notification_stack,
-        animate: {
-            animate: true,
-            animate_speed: 'fast',
-            in_class: "bounceInRight",
-            out_class: "fadeOutDown",
-        }
-    });
+    //pass
+//    new PNotify({
+//        text: "[" + telemetry.board + "] ("+ telemetry.type +") " + telemetry.telem,
+//        context: $("#telemetry_block"),
+//        stack: notification_stack,
+//        animate: {
+//            animate: true,
+//            animate_speed: 'fast',
+//            in_class: "bounceInRight",
+//            out_class: "fadeOutDown",
+//        }
+//    });
 }
 
 function update_age_timers(){
@@ -89,6 +90,7 @@ function update_age_timers(){
 # Telemetry parser
 ######################################
 */
+
 var telemetry_store = {
 };
 

@@ -72,9 +72,9 @@ class EducubeConnectionThread(Thread):
                                            buffer=_buffer)
                         logger.debug(logmsg)
                     else:
-                        logmsg = ('Received unrecognised message\n'
+                        logmsg = ("Received unrecognised message\n"
                                   "        ==> {buffer}"
-                                  ).format(buffer=_buffer)         )
+                                  ).format(buffer=_buffer)
                         logger.warning(logmsg)
 
                     _buffer = bytearray()

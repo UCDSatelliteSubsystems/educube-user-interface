@@ -158,24 +158,25 @@ function hook_commands(){
 // 
 //////////////////////////////////////////////////////////////////////////////
 function provide_notice(msg) {
-    text = msg.message;
-    title = msg.title || false;
-    icon = msg.icon || false;
-    delay = 1500;
-    // level parsing
-    type = msg.type || "notice";
-    // Check Desktop
-    desktop = msg.desktop;
-    if (desktop) PNotify.desktop.permission();
-    return new PNotify({
-        title: title,
-        text: text,
-        icon: icon,
-        type: type,
-        delay: delay,
-        styling: "bootstrap3",
-        desktop: {
-            desktop: desktop
-        }
-    });
+    //pass
+//    text = msg.message;
+//    title = msg.title || false;
+//    icon = msg.icon || false;
+//    delay = 1500;
+//    // level parsing
+//    type = msg.type || "notice";
+//    // Check Desktop
+//    desktop = msg.desktop;
+//    if (desktop) PNotify.desktop.permission();
+//    return new PNotify({
+//        title: title,
+//        text: text,
+//        icon: icon,
+//        type: type,
+//        delay: delay,
+//        styling: "bootstrap3",
+//        desktop: {
+//            desktop: desktop
+//        }
+//    });
 }

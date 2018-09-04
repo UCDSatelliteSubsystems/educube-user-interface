@@ -25,8 +25,6 @@ class Telemetry(namedtuple('Telemetry', TELEMETRY_FIELDS)):
         else:
             return as_recursive_dict(self)
 
-
-
 def remove_value_none(d):
     """Recursively traverse a dictionary to remove keys with value None."""
     _dict = dict()
@@ -170,7 +168,6 @@ SEPARATION_STATUS = {
 
 def parse_adc_telem(telem):
     """."""
-
     # convert the received telemetry to a dictionary with the chip identifiers
     # as keys. The MPU chips have to be handled as special cases -- we give
     # them unique identifiers by combining the identifier (MPU) with their
@@ -194,13 +191,14 @@ def parse_adc_telem(telem):
     # MAG telem gives 'X_P', 'X_N', 'Y_P', 'Y_N'
     # the parsed telemetry packet reduces this to +1/0/-1, depending on 
     # setting. TODO: calculate this as part of a constructor for MagTorqs???   
-    x_p, x_n, y_p, y_n = _chip_telem['MAG'] 
-
-    def _magnetorquer_sign(p, n):
-        return (1 if p and not n else -1 if n and not p else 0)
-
-    mag_torqs = MagTorqs(X=_magnetorquer_sign(x_p, x_n), 
-                         Y=_magnetorquer_sign(y_p, y_n) )
+#    x_p, x_n, y_p, y_n = _chip_telem['MAG'] 
+#
+#    def _magnetorquer_sign(p, n):
+#        return (1 if p and not n else -1 if n and not p else 0)
+#
+#    mag_torqs = MagTorqs(X=_magnetorquer_sign(x_p, x_n), 
+#                         Y=_magnetorquer_sign(y_p, y_n) )
+    magno_torq = None
 
     react_wheel = _chip_telem['WHL']
 
@@ -271,21 +269,23 @@ def parse_eps_telem(telem):
     for ct in telem:
         _chip_telem_id, *_chip_telem_parts = ct.split(',')
         if _chip_telem_id == 'I':
-            key = 'I{ina_id}'.format(ina_id = chip_telem_parts[0])
+            key = 'I{ina_id}'.format(ina_id = _chip_telem_parts[0])
             _chip_telem[key] = _chip_telem_parts
         else:
             _chip_telem[_chip_telem_id] = _chip_telem_parts
 
     ina_chips = (val 
-                 for key, val in _chip_telem.items() if key.startswith['I'])
+                 for key, val in _chip_telem.items() if key.startswith('I'))
     # WHY IS switch_enabled = 1 HARD CODED???
+    try
     ina_telem = [INATelem(name           = EPS_INA_NAME[ina_parts[0]]      ,
                           address        = ina_parts[0]                    ,   
                           shunt_V        = None                            ,
                           bus_V          = ina_parts[1]                    ,
                           current_mA     = ina_parts[2]                    ,
                           power_mW       = '{:.2f}'.format(                
-                                              ina_parts[1] * ina_parts[2]) ,
+                                              float(ina_parts[1]) * 
+                                              float(ina_parts[2])  )       ,
                           switch_enabled = 1                               ,
                           command_id     = EPS_INA_COMMAND_ID[ina_parts[0]] )
                  for ina_parts in ina_chips                                 ]
@@ -325,14 +325,14 @@ def parse_exp_telem(telem):
             key = 'I{ina_id}'.format(ina_id = _chip_telem_parts[0] )
             _chip_telem[key] = _chip_telem_parts
         else:
-            _chip_telem[_chip_telem_id] = chip_telem_parts 
+            _chip_telem[_chip_telem_id] = _chip_telem_parts 
 
-    therm_pwr  = Panels(P1 = chip_telem.get('THERM_P1', [None])[0],
-                        P2 = chip_telem.get('THERM_P2', [None])[0] )
+    therm_pwr  = Panels(P1 = _chip_telem.get('THERM_P1', [None])[0],
+                        P2 = _chip_telem.get('THERM_P2', [None])[0] )
 
     # this feels dangerous -- what if something else starts with I???
     ina_chips = (val 
-                 for key, val in _chip_telem.items() if key.startswith['I'])
+                 for key, val in _chip_telem.items() if key.startswith('I'))
     # exp ina format has shunt_V , but no switch_enabled???
     ina_telem = [INATelem(name           = EXP_INA_NAME[ina_parts[0]]     ,
                           address        = ina_parts[0]                   ,   
@@ -340,17 +340,18 @@ def parse_exp_telem(telem):
                           bus_V          = ina_parts[2]                   ,
                           current_mA     = ina_parts[3]                   ,
                           power_mW       = '{:.2f}'.format(              
-                                              ina_parts[2] * ina_parts[3]),
+                                              float(ina_parts[2]) * 
+                                              float(ina_parts[3])  )      ,
                           switch_enabled = None                           ,
                           command_id     = None                            )
                  for ina_parts in ina_chips                                 ]
 
-    panel_temp = Panels(P1 = Panel(A = chip_telem.get('P1A', [None])[0],
-                                   B = chip_telem.get('P1B', [None])[0],
-                                   C = chip_telem.get('P1C', [None])[0],),
-                        P2 = Panel(A = chip_telem.get('P2A', [None])[0],
-                                   B = chip_telem.get('P2B', [None])[0],
-                                   C = chip_telem.get('P2C', [None])[0],))
+    panel_temp = Panels(P1 = Panel(A = _chip_telem.get('P1A', [None])[0],
+                                   B = _chip_telem.get('P1B', [None])[0],
+                                   C = _chip_telem.get('P1C', [None])[0],),
+                        P2 = Panel(A = _chip_telem.get('P2A', [None])[0],
+                                   B = _chip_telem.get('P2B', [None])[0],
+                                   C = _chip_telem.get('P2C', [None])[0],))
 
     out = EXPTelemetry(THERM_PWR  = therm_pwr ,
                        INA        = ina_telem ,

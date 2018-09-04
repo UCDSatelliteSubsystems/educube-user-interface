@@ -1,28 +1,30 @@
 // call this in the html using <script> set_port({{port}}) </script> to 
 // programatically set port? 
- var PORT = 0
+var PORT = 18888;
 
 function set_port(p){
     PORT = p
 };
 
-var websocket_addr = "ws://localhost:"+PORT+"/socket";
-
+//var websocket_addr = "ws://localhost:"+PORT+"/socket";
+var websocket_addr = "ws://localhost:18888/socket";
 // creates a new websocket handler
 // 
 // Note: if additional msgtypes are added, then this will have to be extended!
 // 
-function setup_websocket(websocket_addr, telemetryhandler) {
+//function setup_websocket(websocket_addr, telemetryhandler) {
+function setup_websocket() {
+    console.log(websocket_addr);
     websocket = new WebSocket(websocket_addr);
 
     function _message_handler (event){
-        console.log('Message received: ' event.data);
         _message = JSON.parse(event.data);
+        console.log('Message received: '+_message);
     
         if (_message.msgtype === 'telemetry'){
-            telemetryhandler.handle_received_telemetry(_message.msgcontent);
+            handle_received_telemetry(_message.msgcontent);
         } else {
-            console.log('WARNING: Unrecognised msgtype: ' _message.msgtype);
+            console.log('WARNING: Unrecognised msgtype: '+_message.msgtype);
         }
     };
 
@@ -41,3 +43,6 @@ function setup_websocket(websocket_addr, telemetryhandler) {
     return websocket
 };
 
+function handle_received_telemetry(packet) {
+    parse_telemetry(packet);
+};

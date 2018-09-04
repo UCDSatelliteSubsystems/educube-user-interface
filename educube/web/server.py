@@ -66,7 +66,7 @@ class MainHandler(tornado.web.RequestHandler):
 
 class EducubeClientSocket(tornado.websocket.WebSocketHandler):
     """."""
-    sockets = set()
+    _sockets = set()
 
     def __init__(self, application, request, educube_connection, **kwargs):
         self._educube_connection = educube_connection
@@ -78,17 +78,17 @@ class EducubeClientSocket(tornado.websocket.WebSocketHandler):
         # Startup periodic calls -- callback_time in milliseconds
         self.loop = tornado.ioloop.PeriodicCallback(
             callback = handle_telemetry_updates(self._educube_connection, 
-                                                self.sockets             ),
+                                                self._sockets            ),
             callback_time = 500                                            )
         self.loop.start()
 
     def open(self):
-        self.sockets.add(self)
+        self._sockets.add(self)
         logger.info("WebSocket opened")
         print("WebSocket opened")
 
     def on_close(self):
-        self.sockets.remove(self)
+        self._sockets.remove(self)
         logger.info("WebSocket closed")
         print("WebSocket closed")
 
@@ -166,6 +166,12 @@ def handle_telemetry_updates(educube, sockets):
     """
     def _handle_telemetry_updates():
         telemetry_packets = educube.parse_telemetry()
+
+        # when an error is encountered in parsing the data,
+        # educube.parse_telemetry() returns None. This then causes another
+        # error to be thrown when turning to JSON. We need to filter out
+        # NoneTypes.
+        telemetry_packets = (t for t in telemetry_packets if t is not None)
 
         for _telemetry in telemetry_packets:
             try: 
