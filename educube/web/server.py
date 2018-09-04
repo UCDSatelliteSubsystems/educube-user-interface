@@ -18,17 +18,12 @@ interface.
 import os
 import json
 import time
-import click
 import webbrowser
+
 import tornado.web
 import tornado.ioloop
 import tornado.httpserver
-from tornado import websocket
-
-#from educube.util import display as display
-from educube.util import educube_conn as educonn
-
-#from educube.util.telemetry_parser import TelemetryParser
+import tornado.websocket
 
 import logging
 logger = logging.getLogger(__name__)
@@ -37,28 +32,19 @@ logger = logging.getLogger(__name__)
 ##########################
 # Globals
 ##########################
-PORT=18888
 dirname = os.path.dirname(__file__)
 STATIC_PATH = os.path.join(dirname, 'static')
 TEMPLATE_PATH = os.path.join(dirname, 'templates')
 
-#GLOBALS={
-#    'sockets': [],
-#}
-
-#educube_connection = None
-#parser = TelemetryParser()   # removed 2018-08-16 -- now in educube_connection
-
 ##########################
 # Main Tornado Application
 ##########################
-class Application(tornado.web.Application):
-    def __init__(self, educube_connection):
+class EduCubeWebApplication(tornado.web.Application):
+    def __init__(self, educube_connection, port):
         handlers = [
             (r"/", MainHandler),
             (r"/socket", EducubeClientSocket, 
              {'educube_connection' : educube_connection}),
-            # (r"/push", HandleCommand),
         ]
         settings = {
             "template_path": TEMPLATE_PATH,
@@ -78,15 +64,16 @@ class MainHandler(tornado.web.RequestHandler):
         self.render("educube.html")
 
 
-class EducubeClientSocket(websocket.WebSocketHandler):
+class EducubeClientSocket(tornado.websocket.WebSocketHandler):
     """."""
     sockets = set()
 
     def __init__(self, application, request, educube_connection, **kwargs):
         self._educube_connection = educube_connection
 
-        websocket.WebSocketHandler.__init__(self, application, request, 
-                                            **kwargs                   )
+        tornado.websocket.WebSocketHandler.__init__(
+            self, application, request, **kwargs
+            )
 
         # Startup periodic calls -- callback_time in milliseconds
         self.loop = tornado.ioloop.PeriodicCallback(
@@ -173,12 +160,13 @@ def handle_command(educube, board, cmd, settings):
 # educube and sockets could then be provided as attributes. 
 # the parser should be moved into Educube
 def handle_telemetry_updates(educube, sockets):
-    """Creates a function to be called periodically to send updated telemetry. 
+    """
+    Creates a function to be called periodically to send updated telemetry. 
 
     """
     def _handle_telemetry_updates():
         telemetry_packets = educube.parse_telemetry()
-        print(telemetry_packets)
+
         for _telemetry in telemetry_packets:
             try: 
                 _telemetry_json = json.dumps({
@@ -186,9 +174,9 @@ def handle_telemetry_updates(educube, sockets):
                     'msgcontent' : _telemetry._as_recursive_dict()
                 })
             except:
-                errmsg = ("Error encountered while parsing the following "
-                          "telemetry as JSON: \n"
-                          "    {t}".format(t=_telemetry)                  )
+                errmsg = ("Error encountered while converting the following "
+                          "telemetry to JSON: \n"
+                          "    {t}".format(t=_telemetry)                     )
                 logger.exception(errmsg, exc_info=True)
                 continue
 
@@ -210,46 +198,19 @@ def handle_telemetry_updates(educube, sockets):
 #######################
 # Main input
 #######################
-def start_webserver(connection):
-    edu_url = "http://localhost:{port}".format(port=PORT)
-    print("EduCube will be available at {url}".format(url=edu_url))
+def run(educube_connection, port):
+    """
+    Start and run the IOLoop, given an EducubeConnection object to handle.
+    """
+    application = EduCubeWebApplication(educube_connection, port)
+    http_server = tornado.httpserver.HTTPServer(application)
+    http_server.listen(port)
 
-    with educonn.get_connection(connection) as conn:
-        click.secho("Your telemetry will be stored at '{path}'"\
-                    .format(path=conn.output_path), fg='green')
-        click.prompt("Press any key to continue", 
-                     default=True, show_default=False)
+    webbrowser.open_new("http://localhost:{port}".format(port=port))
 
-        application = Application(conn)
-        http_server = tornado.httpserver.HTTPServer(application)
-        http_server.listen(PORT)
-
-        webbrowser.open_new(edu_url)
-
-        try:
-            tornado.ioloop.IOLoop.instance().start()
-        except KeyboardInterrupt:
-            tornado.ioloop.IOLoop.instance().stop()
+    try:
+        tornado.ioloop.IOLoop.instance().start()
+    except KeyboardInterrupt:
+        tornado.ioloop.IOLoop.instance().stop()
 
 
-#    # Initialize the connection to the EduCube
-#    educube_connection = educonn.get_connection(connection)
-
-#    # Setup the web application
-#    applicaton = Application()
-#    http_server = tornado.httpserver.HTTPServer(applicaton)
-#    http_server.listen(PORT)
-#    # Startup periodic calls
-#    tornado.ioloop.PeriodicCallback(
-#        call_board_updates, 500
-#    ).start()
-#    # Start the webserver
-#    tornado.autoreload.add_reload_hook( # shutdown serial when reloading
-#        educonn.shutdown_all_connections
-#    )
-#    webbrowser.open_new(edu_url)
-#    try:
-#        tornado.ioloop.IOLoop.instance().start()
-#    except KeyboardInterrupt:
-#        tornado.ioloop.IOLoop.instance().stop()
-#        educonn.shutdown_all_connections()

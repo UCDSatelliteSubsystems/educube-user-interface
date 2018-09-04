@@ -5,20 +5,11 @@ import pkg_resources
 import serial.tools.list_ports
 
 from educube.web import server as webserver
+from educube.util import educube_conn as educonn
 from educube.util.logging_utils import configure_logging
 
 import logging
 logger = logging.getLogger(__name__)
-
-
-#def configure_logging(verbose):
-#    loglevels = {
-#        0: logging.ERROR,
-#        1: logging.WARNING,
-#        2: logging.INFO,
-#        3: logging.DEBUG,
-#    }
-#    logging.basicConfig(level=loglevels[verbose])
 
 
 def verify_serial_connection(port, baud):
@@ -39,15 +30,15 @@ def verify_serial_connection(port, baud):
 # COMMANDS
 ##############################
 
-def get_serial():
+def suggest_serial():
     ports = serial.tools.list_ports.comports()
     suggested_educube_port = ports[-1]
     return suggested_educube_port.device
 
-def get_baud():
+def suggest_baud():
     ports = serial.tools.list_ports.comports()
     suggested_educube_port = ports[-1]
-    if suggested_educube_port.description in ['BASE', 'Base Station']:
+    if suggested_educube_port.description in ('BASE', 'Base Station'):
         return 9600
     else:
         return 115200
@@ -70,41 +61,47 @@ def version():
     print(pkg_resources.require("educube")[0].version)
 
 @cli.command()
-@click.option('-s', '--serial', default=get_serial, prompt=True)
-@click.option('-b', '--baud', default=get_baud, prompt=True)
+@click.option('-s', '--serial', default=suggest_serial, prompt=True)
+@click.option('-b', '--baud', default=suggest_baud, prompt=True)
 @click.option('-e', '--board', default='CDH')
 @click.option('--fake', is_flag=True, default=False, help="Fake the serial")
-@click.option('--json', is_flag=True, default=False, help="Outputs mostly JSON instead")
-@click.pass_context
-def start(ctx, serial, baud, board, fake, json):
+def start(serial, baud, board, fake, port=18888):
     """Starts the EduCube web interface""" 
 
-    logger.info("""Running with settings:
+    logger.info("""Running EduCube connection with settings:
         Serial: {serial}
         Baudrate: {baud}
         EduCube board: {board}
     """.format(serial=serial, baud=baud, board=board))
 
-    ctx.obj['connection'] = {
-        "type": "serial",
-        "port": serial,
-        "baud": baud,
-        "board": board,
-        "fake": fake,
-    }
     if not fake:
         verify_serial_connection(serial, baud)
 
-    webserver.start_webserver(
-        connection=ctx.obj.get('connection')
-    )
+    conn_params = {"type": "serial",
+                   "port": serial,   # NOTE: SERIAL PORT, NOT SOCKET!!!!
+                   "baud": baud,
+                   "board": board,
+                   "fake": fake,
+                   }
+
+    with educonn.get_connection(conn_params) as conn:
+        edu_url = "http://localhost:{port}".format(port=port)
+        click.secho("EduCube will be available at {url}".format(url=edu_url), 
+                    fg='green')
+        click.secho("Your telemetry will be stored at '{path}'"\
+                    .format(path=conn.output_path), fg='green')
+        click.prompt("Press any key to continue",
+                     default=True, show_default=False)
+
+        webserver.run(conn, port)
+
 
 ##############################
 # MAIN
 ##############################
 
 def main():
-    cli(obj={})
+    cli()
 
 if __name__ == '__main__':
     main()

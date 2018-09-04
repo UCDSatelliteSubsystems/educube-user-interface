@@ -67,13 +67,14 @@ class EducubeConnectionThread(Thread):
                                      .format(time=telem[0],data=telem[1])  )
                     elif is_debug(_buffer):
                         logmsg = ("Received {board} DEBUG message:\n"
-                                  +"        ==> {buffer}"
+                                  "        ==> {buffer}"
                                   ).format(board=self.master.board_id,
                                            buffer=_buffer)
                         logger.debug(logmsg)
                     else:
                         logmsg = ('Received unrecognised message\n'
-                                  +"        ==> {buff}".format(buff=_buffer))
+                                  "        ==> {buffer}"
+                                  ).format(buffer=_buffer)         )
                         logger.warning(logmsg)
 
                     _buffer = bytearray()
@@ -418,19 +419,19 @@ class FakeEducubeConnection(EducubeConnection):
 
 ##############################################################################
 
-def get_connection(connection):
-    logger.info("Starting educube connection")
-    if connection['fake']:
+def get_connection(connection_params):
+    logger.info("Creating educube connection")
+    if connection_params['fake']:
         educube_connection = FakeEducubeConnection(
-            connection['port'],
-            connection['board'],
-            baud=connection['baud']
+            connection_params['port'],
+            connection_params['board'],
+            baud=connection_params['baud']
         )
     else:
         educube_connection = EducubeConnection(
-            connection['port'],
-            connection['board'],
-            baud=connection['baud'],
+            connection_params['port'],
+            connection_params['board'],
+            baud=connection_params['baud'],
         )
     return educube_connection
 
