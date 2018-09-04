@@ -112,6 +112,10 @@ class EducubeConnection():
     telemetry_buffer = []
     telem_log_format = "{timestamp}\t{telemetry}\n"
 
+    _conn_type = 'data'    # this is almost unnecessary -- it is only included
+                           # so that, in principle, fake connections can
+                           # easily be given a different default name.
+
     def __init__(self, portname, board, baud=9600, timeout=5,
                  output_path=None, telem_request_interval_s=5):
         """
@@ -136,8 +140,8 @@ class EducubeConnection():
         self.board_id = board
 
 
-        if board not in [self.board_id_EPS, self.board_id_CDH, 
-                         self.board_id_EXP, self.board_id_ADC ]:
+        if board not in (self.board_id_EPS, self.board_id_CDH, 
+                         self.board_id_EXP, self.board_id_ADC ):
             errmsg = 'Invalid board identifier {board}'.format(board=board)
             raise EducubeConnectionError(errmsg)
 
@@ -146,7 +150,7 @@ class EducubeConnection():
             self.output_path = output_path
         else:
             outfile = ("educube_telemetry_{type}_{time}.raw"\
-                       .format(type=self.conn_type, time=millis()) )
+                       .format(type=self._conn_type, time=millis()))
             self.output_path = os.path.join( tempfile.gettempdir(), outfile )
 
         self.telem_request_interval_s = telem_request_interval_s

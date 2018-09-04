@@ -1,4 +1,3 @@
-<style>
 #telemetry_block{ 
     position: relative;
     overflow: hidden;
@@ -34,7 +33,3 @@
     padding-left: 10px;
     padding-right: 10px;
 }
-</style>
-
-<div id="telemetry_block">
-</div>

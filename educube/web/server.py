@@ -75,7 +75,7 @@ class Application(tornado.web.Application):
 ##########################
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
-        self.render("educube.html", title="EduCube")
+        self.render("educube.html")
 
 
 class EducubeClientSocket(websocket.WebSocketHandler):
@@ -83,22 +83,27 @@ class EducubeClientSocket(websocket.WebSocketHandler):
     sockets = set()
 
     def __init__(self, application, request, educube_connection, **kwargs):
-        self.educube = educube_connection
+        self._educube_connection = educube_connection
 
         websocket.WebSocketHandler.__init__(self, application, request, 
                                             **kwargs                   )
 
-        # Startup periodic calls
+        # Startup periodic calls -- callback_time in milliseconds
         self.loop = tornado.ioloop.PeriodicCallback(
-            callback      = handle_telemetry_updates(self.educube, 
-                                                     self.sockets ),
-            callback_time = 500                                     )
+            callback = handle_telemetry_updates(self._educube_connection, 
+                                                self.sockets             ),
+            callback_time = 500                                            )
         self.loop.start()
-
 
     def open(self):
         self.sockets.add(self)
+        logger.info("WebSocket opened")
         print("WebSocket opened")
+
+    def on_close(self):
+        self.sockets.remove(self)
+        logger.info("WebSocket closed")
+        print("WebSocket closed")
 
     def on_message(self, message):
         """
@@ -107,11 +112,12 @@ class EducubeClientSocket(websocket.WebSocketHandler):
         Messages should be sent as stringified JSON objects, with the
         following fields:
 
-            { msgtype : <msgtype>, msgcontent : <msgcontent> }
+            { 'msgtype' : <msgtype>, 'msgcontent' : <msgcontent> }
 
         The only allowed <msgtype> is 'command'. For a command, <msgcontent>
         should be a JavaScript style object, with fields:
-            { board : <board>, command : <command>, settings : <settings>}
+            { 'board'    : <board>   , 'command' : <command>, 
+              'settings' : <settings>                        }
          
         """
 
@@ -121,7 +127,7 @@ class EducubeClientSocket(websocket.WebSocketHandler):
             msg = json.loads(message)
         except json.JSONDecodeError:
             errmsg = ('Received message could not be parsed as valid JSON'
-                      +'\n{msg}'.format(msg=message)                      )
+                      +'\n        {msg}'.format(msg=message)              )
             logger.exception(errmsg, exc_info=True)
             return 
 
@@ -131,10 +137,10 @@ class EducubeClientSocket(websocket.WebSocketHandler):
             settings = msg['msgcontent'].get('settings', None)
 
             try:
-                handle_command(self.educube_connection, board, cmd, settings) 
+                handle_command(self._educube_connection, board, cmd, settings) 
             except:
                 errmsg = ('Exception encountered while processing command '
-                          +'with arguments:\n'
+                          +'with arguments:\n       '
                           +'board={board}, cmd={cmd}, settings={settings}'\
                            .format(board=board, cmd=cmd, settings=settings))
                 logger.exception(errmsg, exc_info=True)
@@ -143,9 +149,6 @@ class EducubeClientSocket(websocket.WebSocketHandler):
         else:
             logger.warning('Unknown msgtype: {}'.format(msg['msgtype']))
         
-    def on_close(self):
-        print("WebSocket closed")
-        self.sockets.remove(self)
 
 ########################
 # Message parser
@@ -175,22 +178,31 @@ def handle_telemetry_updates(educube, sockets):
     """
     def _handle_telemetry_updates():
         telemetry_packets = educube.parse_telemetry()
+        print(telemetry_packets)
         for _telemetry in telemetry_packets:
-#            try:
-#                t = parser.parse_telemetry(timestamp, telemetry)
-#            except:
-#                errmsg = "Telemetry badly formed: {t}".format(t=telemetry)
-#                logger.exception(errmsg, exc_info=True)
-#                continue
+            try: 
+                _telemetry_json = json.dumps({
+                    'msgtype'    : 'telemetry'                    , 
+                    'msgcontent' : _telemetry._as_recursive_dict()
+                })
+            except:
+                errmsg = ("Error encountered while parsing the following "
+                          "telemetry as JSON: \n"
+                          "    {t}".format(t=_telemetry)                  )
+                logger.exception(errmsg, exc_info=True)
+                continue
+
             try:
-                _telemetry_json = _telemetry._asJSON()
                 logger.debug("Updating telemetry: {}"\
                              .format(_telemetry_json))
                 for socket in sockets:
                     socket.write_message(_telemetry_json)
             except:
-                errmsg = "Error sending telemetry over websockets"
+                errmsg = ("Error encountered while sending the following "
+                          "telemetry message over websockets: \n"
+                          "    {t}".format(t=_telemetry_json))
                 logger.exception(errmsg, exc_info=True)
+                continue
 
     return _handle_telemetry_updates
 

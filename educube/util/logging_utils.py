@@ -12,16 +12,28 @@ def current_time(fmt='%Y-%m-%d-%H-%M-%S'):
     """Return the current time as a formatted string."""
     return dt.now().strftime(format=fmt)
 
-def configure_logging(verbose):
+def configure_logging(verbose, error_stream=True):
     """Set the logging level and handlers."""
-    filehandler = logging.FileHandler(filename=current_time()+'.log')
     fmt = '%(asctime)s : %(name)s : %(levelname)s :\n    %(message)s'
-    filehandler.setFormatter(logging.Formatter(fmt))
+    fmtr = logging.Formatter(fmt)
+
+    filehandler = logging.FileHandler(filename=current_time()+'.log')
+    filehandler.setFormatter(fmtr)
     filehandler.setLevel(LOGLEVELS[verbose])
 
+    handlers = (filehandler,)
+
+    if error_stream:
+        streamhandler = logging.StreamHandler()
+        streamhandler.setFormatter(fmtr)
+        streamhandler.setLevel(logging.ERROR)
+        handlers = (filehandler, streamhandler)
+
     root = logging.getLogger()
-    root.addHandler(filehandler)
     root.setLevel(LOGLEVELS[verbose])
+
+    for handler in handlers:
+        root.addHandler(handler)
 
     return root
 

@@ -4,70 +4,34 @@
       <div class="panel-heading">EXP Commands</div>
       <div class="panel-body">
         <div class="col-sm-4">
-          <div class="input-group">
-            <label for="outfile">
-              P1 Heat (<span id="exp_pwr_1_txt">0</span>%)
-            </label>
-            <div id="exp_slider_1" data-board='EXP' data-cmd='HEAT'
-              data-settings='{"panel" : 1}'>
+          <div class="row">
+            <div class="col-sm-4">
+              <label for="exp_slider_1">
+                P1 Heat (<span id="exp_txt_1">0</span>%)
+              </label>
+            </div>
+            <div class="col-sm-8">
+              <div id="exp_slider_1" data-board='EXP' data-cmd='HEAT'
+                data-settings='{"panel" : 1}'>
+              </div>
             </div>
           </div>
         </div>
 
         <div class="col-sm-4">
-          <div class="input-group">
-            <label for="outfile">
-              P2 Heat (<span id="exp_pwr_2_txt">0</span>%)
-            </label>
-            <div id="exp_slider_2" data-board='EXP' data-cmd='HEAT'
-              data-settings='{"panel" : 2}'>
+          <div class="row">
+            <div class="col-sm-4">
+              <label for="exp_slider_2">
+                P2 Heat (<span id="exp_txt_2">0</span>%)
+              </label>
+            </div>
+            <div class="col-sm-8">
+              <div id="exp_slider_2" data-board='EXP' data-cmd='HEAT'
+                data-settings='{"panel" : 2}'>
+              </div>
             </div>
           </div>
         </div>
-<!--
-        <script>
-        $(document).ready(function(){
-          $(function() {                        
-            $("#exp_slider_1").noUiSlider({
-                handles: 1,
-                start:[0],
-                step: 1,
-                range: {
-                    'min': 0,
-                    'max': 100
-                }
-            }).on('set', function( event, val ) {
-                var val = Math.round(val)
-                var cmdstring = "C|EXP|HEAT|1|"+Math.abs(val) ;
-                websocket.send(cmdstring);
-                provide_notice({"message": "Command sent ("+cmdstring+")", "type": "success"});
-            }).on('slide', function( event, val ) {
-                var val = Math.round(val)
-                $("#exp_pwr_1_txt").text(val);
-            });
-
-            $("#exp_slider_2").noUiSlider({
-                handles: 1,
-                start:[0],
-                step: 1,
-                range: {
-                    'min': 0,
-                    'max': 100
-                }
-            }).on('set', function( event, val ) {
-                var val = Math.round(val)
-                var cmdstring = "C|EXP|HEAT|2|"+Math.abs(val) ;
-                websocket.send(cmdstring);
-                provide_notice({"message": "Command sent ("+cmdstring+")", "type": "success"});
-            }).on('slide', function( event, val ) {
-                var val = Math.round(val)
-                $("#exp_pwr_2_txt").text(val);
-            });
-            
-          });
-        });
-        </script>
--->
 
         <div class="col-sm-4">
           <button data-board="EXP" data-cmd="T" data-settings="null" 

@@ -7,46 +7,63 @@
   <div class="col-sm-12">
     <div class="panel panel-primary">
       <div class="panel-heading">ADC Commands</div>
-      <div class="panel-body">    
-        <div class="col-sm-12 col-md-4">
-          <div class="input-group">
-            <label for="outfile">
-              Wheel Power (<span id="spdtxt">0</span>%)
-            </label>
-            <div id="spdslider" data-board='ADC' data-cmd='REACT'></div>
+      <div class="panel-body">
+        <div class="row">
+          <div class="col-sm-3">
+            <div class="row">
+              <div class="col-sm-4">
+                <label for="spdslider">
+                  Wheel Power (<span id="spdtxt">0</span>%)
+                </label>
+              </div>
+              <div class="col-sm-8">
+                <div id="spdslider" data-board='ADC' data-cmd='REACT'></div>
+              </div>
+            </div>
           </div>
-        </div>
-        <div class="col-sm-8 col-md-6">
-          <div class="input-group">
-            <label for="outfile">
-              MagTorquers:
-            </label>
-            <button data-board="ADC" data-cmd="MAG" 
-                data-settings='{"axis":"X", "sign":"-"}' 
-                class="educube_action btn btn-sm btn-danger">X-</button>
-            <button data-board="ADC" data-cmd="MAG"
-                data-settings='{"axis":"X", "sign":"0"}' 
-                class="educube_action btn btn-sm btn-default">Off</button>
-            <button data-board="ADC" data-cmd="MAG"
-                data-settings='{"axis":"X", "sign":"+"}' 
-                class="educube_action btn btn-sm btn-success">X+</button>
-            |
-            <button data-board="ADC" data-cmd="MAG"
-                data-settings='{"axis":"Y", "sign":"-"}' 
-                class="educube_action btn btn-sm btn-danger">Y-</button>
-            <button data-board="ADC" data-cmd="MAG"
-                data-settings='{"axis":"Y", "sign":"0"}' 
-                class="educube_action btn btn-sm btn-default">Off</button>
-            <button data-board="ADC" data-cmd="MAG"
-                data-settings='{"axis":"Y", "sign":"+"}' 
-                class="educube_action btn btn-sm btn-success">Y+</button>
+          <div class="col-sm-6">
+            <div class="row">
+              <div class="col-sm-4">
+                <label for="outfile">
+                  MagTorquers:
+                </label>
+              </div>
+              <div class="col-sm-4 row">
+                <button data-board="ADC" data-cmd="MAG" 
+                    data-settings='{"axis":"X", "sign":"-"}' 
+                    class="educube_action btn btn-sm btn-danger col-sm-4">
+                  X-</button>
+                <button data-board="ADC" data-cmd="MAG"
+                    data-settings='{"axis":"X", "sign":"0"}' 
+                    class="educube_action btn btn-sm btn-default col-sm-4">
+                  Off</button>
+                <button data-board="ADC" data-cmd="MAG"
+                    data-settings='{"axis":"X", "sign":"+"}' 
+                    class="educube_action btn btn-sm btn-success col-sm-4">
+                  X+</button>
+              </div>
+              <div class="col-sm-4 row">
+                <button data-board="ADC" data-cmd="MAG"
+                    data-settings='{"axis":"Y", "sign":"-"}' 
+                    class="educube_action btn btn-sm btn-danger col-sm-4">
+                  Y-</button>
+                <button data-board="ADC" data-cmd="MAG"
+                    data-settings='{"axis":"Y", "sign":"0"}' 
+                    class="educube_action btn btn-sm btn-default col-sm-4">
+                  Off</button>
+                <button data-board="ADC" data-cmd="MAG"
+                    data-settings='{"axis":"Y", "sign":"+"}' 
+                    class="educube_action btn btn-sm btn-success col-sm-4">
+                  Y+</button>
+              </div>
+            </div>
           </div>
-        </div>
-        <div class="col-sm-4 col-md-2">
-          <button data-board="ADC" data-cmd="T" data-settings="null"
-              class="educube_action btn btn-sm btn-info btn-block pull-right">
-            Request Telemetry
-          </button>
+          <div class="col-sm-3">
+            <button data-board="ADC" data-cmd="T" data-settings="null"
+                class="educube_action btn btn-sm btn-info pull-right">
+              Request Telemetry
+            </button>
+          </div>
         </div>
 
       </div>
@@ -59,132 +76,12 @@
   </div>
 </div>
 
-<!--
-<link href="{{ static_url("css/nouislider.css") }}" rel="stylesheet">
-<script src="{{ static_url("libraries/js/nouislider.js") }}"></script>
-<script>
-    function createClickSlider () {
-      var slider = $("#spdslider")[0]
-      noUiSlider.create(slider, {
-        handles: 1,
-        start:[0],
-        step: 5,
-        range: {
-            'min': -100,
-            'max': 100
-            },
-          pips: { mode: 'count', values: 5 }
-      })
-      slider.noUiSlider.on("set", setSpeedVal)
-      slider.noUiSlider.on("slide", slideSpeedVal);
-
-      var pips = slider.querySelectorAll('.noUi-value');
-
-      for ( var i = 0; i < pips.length; i++ ) {
-          // For this example. Do this in CSS!
-          pips[i].style.cursor = 'pointer';
-          pips[i].addEventListener('click', clickOnPip);
-      }
-
-    }
-
-    function clickOnPip() {
-        var slider = $("#spdslider")[0]
-        var value = Number(this.getAttribute('data-value'));
-        slider.noUiSlider.set(value);
-    }
-
-    function setSpeedVal(speedval){
-        var speed = Math.round(speedval)
-        var sign = "+";
-        if (speed < 0) 
-            sign = "-"
-        var cmdstring = "C|ADC|REACT|"+sign+"|"+Math.abs(speed) ;
-        websocket.send(cmdstring);
-        provide_notice({"message": "Command sent ("+cmdstring+")", 
-                            "type"   : "success"                      });
-        $("#spdtxt").text(speed);
-
-    }
-  
-    function slideSpeedVal(speedval){
-        var speed = Math.round(speedval);
-        $("#spdtxt").text(speed);
-    }
-
-
-
-    $(document).ready(createClickSlider);
-
-
-//
-//
-//  function createClickSlider(){
-//    var slider = $("#spdslider")
-//    slider.noUiSlider({
-//        handles: 1,
-//        start:[0],
-//        step: 5,
-//        range: {
-//            'min': -100,
-//            'max': 100
-//            },
-//        pips: {mode:'count', values: 5}
-//        }).on("set", setSpeedVal).on("slide", slideSpeedVal);
-//
-////    var pips = slider.querySelectorAll(".noUi-value");
-//    var pips = $('.noUi-value');
-//    for (var i = 0; i < pips.length; i++){
-//      pips[i].style.cursor = "pointer";
-//      pinps[i].addEventListener("click", clickOnPip);
-//    }
-//
-//  }
-//
-//
-//  function clickOnPip(){
-//    var speedval = Number(this.getAttribute('data-value'));
-//    $("#spdslider").noUiSlider.set(speedval);
-//  }
-//
-//  $(document).ready(createClickSlider);
-//
-//  $(document).ready(function(){
-//    $(function() {                        
-//      $("#spdslider").noUiSlider({
-//          handles: 1,
-//          start:[0],
-//          step: 5,
-//          range: {
-//              'min': -100,
-//              'max': 100
-//          },
-//          pips: {mode:'count', values: 5}
-//      }).on('set', function( event, speedval ) {
-//          var speed = Math.round(speedval)
-//          var sign = "+";
-//          if (speed < 0) 
-//              sign = "-"
-//          var cmdstring = "C|ADC|REACT|"+sign+"|"+Math.abs(speed) ;
-//          websocket.send(cmdstring);
-//          provide_notice({"message": "Command sent ("+cmdstring+")", 
-//                          "type"   : "success"                      });
-//      }).on('slide', function( event, speedval ) {
-//          var speed = Math.round(speedval)
-//          $("#spdtxt").text(speed);
-//      });
-//      
-//    });
-//  };
-</script>
--->
-
 
 <div style="display:none;">
   <div id="tmpl-adc_telem_view" type="text/x-jQuery-tmpl">
     <div class="row">
       <h3>Attitude Control</h3>  
-      <div class="col-sm-4 ina-block">
+      <div class="col-sm-6 ina-block">
         <div class="panel panel-warning">
           <div class="panel-heading">
             <h4 class="panel-title">Magneto Torquers</h3>
@@ -216,7 +113,7 @@
         </div>
       </div>
 
-      <div class="col-sm-4 ina-block">
+      <div class="col-sm-6 ina-block">
         <div class="panel panel-warning">
           <div class="panel-heading">
             <h4 class="panel-title">Reaction Wheel</h3>
@@ -236,7 +133,7 @@
 
     <d class="row">
       <h3>Attitude Determination</h3>  
-      <div class="col-sm-4 ina-block">
+      <div class="col-sm-6 ina-block">
         <div class="panel panel-info">
           <div class="panel-heading">
               <h4 class="panel-title">IMU</h3>
@@ -266,7 +163,7 @@
         </div>
       </div>
 
-      <div class="col-sm-4 ina-block">
+      <div class="col-sm-6 ina-block">
         <div class="panel panel-info">
           <div class="panel-heading">
             <h4 class="panel-title">Sun Sensors</h3>

@@ -10,14 +10,47 @@ logger = logging.getLogger(__name__)
 
 TELEMETRY_FIELDS = ('time', 'type', 'board', 'telem', 'data')
 
-class Telemetry(namedtuple('Telemetry', TELEMETRY_FIELDS):
-    """."""
-    def _asJSON(self, remove_null=False):
-        """."""
+class Telemetry(namedtuple('Telemetry', TELEMETRY_FIELDS)):
+    """Telemetry information
+
+    """
+    def _as_JSON(self, remove_null=False):
+        """Convert to ta JSON string."""
+        return json.dumps(self._as_recursive_dict(remove_null=remove_null))
+
+    def _as_recursive_dict(self, remove_null=False):
+        """Convert all namedtuple attributes to dictionaries."""
         if remove_null:
-            return json.dumps(remove_value_none(self._asdict()))
+            return remove_value_none(as_recursive_dict(self))
         else:
-            return json.dumps(self._asdict())
+            return as_recursive_dict(self)
+
+
+
+def remove_value_none(d):
+    """Recursively traverse a dictionary to remove keys with value None."""
+    _dict = dict()
+    for key, val in d.items():
+        if isinstance(val, dict):
+            _dict[key] = remove_value_none(val)
+        elif val is not None:
+            _dict[key] = val
+    return _dict
+
+
+def as_recursive_dict(obj):
+    """Recursively parses a namedtuple to convert to dictionary."""
+    _dict = dict()
+    if isinstance(obj, tuple):  # and hasattr(obj, '_asdict')???
+        items = obj._asdict()
+        for item in items:
+            if isinstance(items[item], tuple): # makes first test redundant???
+                _dict[item] = as_recursive_dict(items[item])
+            else:
+                _dict[item] = items[item]
+                               # else???
+    return _dict
+
 
 
 # 
@@ -57,7 +90,7 @@ EXPTelemetry = namedtuple('EXPTelemetry', EXP_FIELDS)
 # structures of subfields:
 # ADC
 SunSensor = namedtuple('SunSensor', ('FRONT', 'BACK', 'LEFT', 'RIGHT'))
-MagnoTorq = namedtuple('MagnoTorq', ('X_P', 'X_N', 'Y_P', 'Y_N'))
+MagTorqs  = namedtuple('MagTorqs', ('X','Y'))
 MPUAcc    = namedtuple('MPUAcc', ('X', 'Y', 'Z'))
 MPUGyr    = namedtuple('MPUGyr', ('X', 'Y', 'Z'))
 MPUMag    = namedtuple('MPUMag', ('X', 'Y', 'Z'))
@@ -159,7 +192,15 @@ def parse_adc_telem(telem):
     sun_dir = _chip_telem['ANG']
 
     # MAG telem gives 'X_P', 'X_N', 'Y_P', 'Y_N'
-    magno_torq = MagnoTorq(*_chip_telem['MAG'])
+    # the parsed telemetry packet reduces this to +1/0/-1, depending on 
+    # setting. TODO: calculate this as part of a constructor for MagTorqs???   
+    x_p, x_n, y_p, y_n = _chip_telem['MAG'] 
+
+    def _magnetorquer_sign(p, n):
+        return (1 if p and not n else -1 if n and not p else 0)
+
+    mag_torqs = MagTorqs(X=_magnetorquer_sign(x_p, x_n), 
+                         Y=_magnetorquer_sign(y_p, y_n) )
 
     react_wheel = _chip_telem['WHL']
 
@@ -317,56 +358,11 @@ def parse_exp_telem(telem):
     return out
 
 
-
-def remove_value_none(d):
-    """Recursively traverse a dictionary to remove keys with value None."""
-    _dict = dict()
-    for key, val in d.items():
-        if isinstance(val, dict):
-            _dict[key] = remove_value_none(val)
-        elif val is not None:
-            _dict[key] = val
-    return _dict
-
-
-def as_dict(obj):
-    """Recursively parses a namedtuple to convert to dictionary."""
-    _dict = dict()
-    if isinstance(obj, tuple):  # and hasattr(obj, '_asdict')???
-        items = obj._asdict()
-        for item in items:
-            if isinstance(items[item], tuple): # makes first test redundant???
-                _dict[item] = as_dict(items[item])
-            else:
-                _dict[item] = items[item]
-                               # else???
-    return _dict
-
 class TelemetryParserException(Exception):
     """An exception to be thrown if trying to handle Bad Telemetry."""
 
 
 class TelemetryParser(object):
-
-#    BOARD_CONFIG = {
-#        "EPS": {
-#            "ID": "EPS",
-#            "parser": 'parse_eps_telem'
-#        },
-#        "CDH": {
-#            "ID": "CDH",
-#            "parser": 'parse_cdh_telem'
-#        },
-#        "EXP": {
-#            "ID": "EXP",
-#            "parser": 'parse_exp_telem'
-#        },
-#        "ADC": {
-#            "ID": "ADC",
-#            "parser": 'parse_adc_telem'
-#        }
-#    }
-
     board_parsers = {
         "ADC" : parse_adc_telem,
         "CDH" : parse_cdh_telem,
@@ -378,9 +374,6 @@ class TelemetryParser(object):
 
     last_board_telemetry = {}
     
-#    def __init__(self):
-#        pass
-
     # -- changed to take telemetry as a unicode string, not bytes.
     # -- shouldn't the check that this is telemetry happen before the parser?
     #    Therefore, isn't _telem_type always just going to be T?
@@ -398,7 +391,6 @@ class TelemetryParser(object):
         """."""
 
         logger.info("Parsing telemetry")
-#        telem_parts = telemetry.decode('utf8').split("|")
         _telem_parts = telemetry.split("|")
 
         if len(_telem_parts) < 3:
@@ -406,23 +398,23 @@ class TelemetryParser(object):
             return
 
         _telem_type, _telem_board, *_chip_telem_parts = _telem_parts
-#        telem_struct = {
-#            "time": timestamp,
-#            "type": telem_type,
-#            "board": telem_board,
-#            "telem": "|".join(telem_parts[2:])
-#        }
         
         try:
-            _parser_function = self.board_parser[_telem_board]
+            _parser_function = self.board_parsers[_telem_board]
         except KeyError:
             # unrecognised board type
+            errmsg = ("Unrecognised board ID: {b}. ".format(b=_telem_board)
+                      +"Ignoring packet")
+            logger.exception(errmsg)
             return
 
         try:
-            _parsed_telemetry = _parser_function(chip_telem_parts)
+            _parsed_telemetry = _parser_function(_chip_telem_parts)
         except:
             # unhandled parsing error
+            errmsg = ("Unhandled error while parsing the following telemetry" 
+                      "packet:\n    {t}".format(t=telemetry)                 )
+            logger.exception(errmsg, exc_info=True)
             return
 
 
@@ -446,242 +438,3 @@ class TelemetryParser(object):
         return out
 
 
-
-
-    def get_command_id_for_eps_ina(self, address):
-        if address == 68:
-            return "R"
-        if address in [69, 72]:
-            return "1"
-        if address in [70, 74]:
-            return "2"
-        if address in [71, 75]:
-            return "3"
-
-    def parse_eps_telem(self, telem):
-        telem_structure = {
-            "INA": [],
-            "DS2438": {},
-            "DS18B20_A": {},
-            "DS18B20_B": {},
-            "CHARGING": None
-        }
-        for chip_telem in telem:
-            ctelem_parts = chip_telem.split(",")
-            if ctelem_parts[0] == "I":
-                ina_telem = {
-                    "name": INA_NAMES[ctelem_parts[1]],
-                    "address": ctelem_parts[1],
-                    "bus_V": ctelem_parts[2],
-                    "current_mA": ctelem_parts[3],
-                    "switch_enabled": 1,
-                    "power_mW": "{:.2f}".format(float(ctelem_parts[2])
-                                                * float(ctelem_parts[3])),
-                    "command_id": self.get_command_id_for_eps_ina(int(ctelem_parts[1]))
-                }
-                telem_structure["INA"].append(ina_telem)
-            if ctelem_parts[0] == "DA":
-                telem_structure["DS2438"] = {
-                    "temp": ctelem_parts[1],
-                    "voltage": ctelem_parts[2],
-                    "current": ctelem_parts[3]
-                }
-            if ctelem_parts[0] == "DB":
-                telem_structure["DS18B20_A"] = {
-                    "temp": ctelem_parts[1]
-                }
-            if ctelem_parts[0] == "DC":
-                telem_structure["DS18B20_B"] = {
-                    "temp": ctelem_parts[1]
-                }
-            if ctelem_parts[0] == "C":
-                telem_structure["CHARGING"] = (ctelem_parts[1] == 1)
-
-        # Now we go back over the telemetry to add in the status of the INA
-        # switches We can't do it in the same loop in case (somehow) the
-        # switch state comes before the switch power telemtry
-
-        def add_ina_switch_state(ina_name, switch_state):
-            address_ids = []
-            if ina_name == "R":
-                address_ids = [68]
-            if ina_name == "1":
-                address_ids = [69, 72]
-            if ina_name == "2":
-                address_ids = [70, 74]
-            if ina_name == "3":
-                address_ids = [71, 75]
-            for ina_telem in telem_structure["INA"]:
-                if int(ina_telem['address']) in address_ids:
-                    ina_telem['switch_enabled'] = int(switch_state)
-
-        for chip_telem in telem:
-            ctelem_parts = chip_telem.split(",")
-            # Skip all telem not 'I_E'    
-            if ctelem_parts[0] != "I_E":
-                continue
-            add_ina_switch_state("R", ctelem_parts[1])
-            add_ina_switch_state("1", ctelem_parts[2])
-            add_ina_switch_state("2", ctelem_parts[3])
-            add_ina_switch_state("3", ctelem_parts[4])
-        return telem_structure
-
-
-    def parse_adc_telem(self, telem):
-        telem_structure = {
-            "SUN_SENSORS": {},
-            "SUN_DIR": {},
-            "MAGNO_TORQ": {},
-            "REACT_WHEEL": None,
-            "MPU_ACC": {},
-            "MPU_GYR": {},
-            "MPU_MAG": {},
-        }
-        for chip_telem in telem:
-            ctelem_parts = chip_telem.split(",")
-            # Handle sunsensors
-            if ctelem_parts[0] == "SOL":
-                telem_structure["SUN_SENSORS"] = {
-                    "FRONT": ctelem_parts[1],
-                    "BACK": ctelem_parts[2],
-                    "LEFT": ctelem_parts[3],
-                    "RIGHT": ctelem_parts[4]
-                }
-            # Handle sun angle calculation
-            if ctelem_parts[0] == "ANG":
-                telem_structure["SUN_DIR"] = ctelem_parts[1]
-            # Handle MAG intensity
-            if ctelem_parts[0] == "MAG":
-                telem_structure["MAGNO_TORQ"] = {
-                    "X_P": ctelem_parts[1],
-                    "X_N": ctelem_parts[2],
-                    "Y_P": ctelem_parts[3],
-                    "Y_N": ctelem_parts[4]
-                }
-            # Handle reaction wheel data
-            if ctelem_parts[0] == "WHL":
-                telem_structure["REACT_WHEEL"] = ctelem_parts[1]
-            if ctelem_parts[0] == "MPU":
-                if ctelem_parts[1] == "ACC":
-                    telem_structure["MPU_ACC"] = {
-                        "X": ctelem_parts[2],
-                        "Y": ctelem_parts[3],
-                        "Z": ctelem_parts[4]
-                    }
-                if ctelem_parts[1] == "GYR":
-                    telem_structure["MPU_GYR"] = {
-                        "X": ctelem_parts[2],
-                        "Y": ctelem_parts[3],
-                        "Z": ctelem_parts[4]
-                    }
-                if ctelem_parts[1] == "MAG":
-                    telem_structure["MPU_MAG"] = {
-                        "X": ctelem_parts[2],
-                        "Y": ctelem_parts[3],
-                        "Z": ctelem_parts[4]
-                    }
-        return telem_structure
-
-    def _degmin_to_deg(self, degmin):
-        str_val = "%s" % degmin
-        point_loc = str_val.find(".")
-        deg_part = float(str_val[0:point_loc-2])
-        min_part = float(str_val[point_loc-2:])
-        return deg_part + (min_part/60)
-
-    def parse_cdh_telem(self, telem):
-        telem_structure = {
-            "GPS_DATE": None,
-            "GPS_FIX": {},
-            "GPS_META": {},
-            "SEPARATION": {},
-            "HOT_PLUG": {}
-        }
-        for chip_telem in telem:
-            ctelem_parts = chip_telem.split(",")
-            # Handle sunsensors
-            if ctelem_parts[0] == "GPS":
-                telem_structure["GPS_DATE"] = ctelem_parts[1]
-                telem_structure["GPS_FIX_DEGMIN"] = {
-                    "LAT": ctelem_parts[2],
-                    "LON": ctelem_parts[3],
-                }
-                telem_structure["GPS_FIX"] = {
-                    "LAT": float(ctelem_parts[2])/1e7,
-                    "LON": float(ctelem_parts[3])/1e7,
-                }
-                telem_structure["GPS_META"] = {
-                    "HDOP": ctelem_parts[4],
-                    "ALT_CM": ctelem_parts[5],
-                    "STATUS_INT": ctelem_parts[6],
-                    "STATUS": "No Fix"
-                }
-                stat_int = int(telem_structure["GPS_META"]["STATUS_INT"])
-                if stat_int == 1:
-                    telem_structure["GPS_META"]["STATUS"] = "EST"
-                elif stat_int == 2:
-                    telem_structure["GPS_META"]["STATUS"] = "Time only"
-                elif stat_int == 3:
-                    telem_structure["GPS_META"]["STATUS"] = "STD"
-                elif stat_int == 4:
-                    telem_structure["GPS_META"]["STATUS"] = "DGPS"
-            if ctelem_parts[0] == "SEP":
-                telem_structure["SEPARATION"]["ID"] = ctelem_parts[1]
-                if ctelem_parts[1] == 0:
-                    telem_structure["SEPARATION"]["VAL"] = "Switch Missing"
-                if ctelem_parts[1] == 1:
-                    telem_structure["SEPARATION"]["VAL"] = "Separated"
-                if ctelem_parts[1] == 2:
-                    telem_structure["SEPARATION"]["VAL"] = "In Launch Adapter"
-                telem_structure["HOT_PLUG"]["ADC"] = ctelem_parts[2]
-                telem_structure["HOT_PLUG"]["COMM"] = ctelem_parts[3]
-                telem_structure["HOT_PLUG"]["EXP1"] = ctelem_parts[4]
-                telem_structure["HOT_PLUG"]["SPARE"] = ctelem_parts[5]
-        return telem_structure
-
-    def get_exp_ina_name(self, address):
-        if address == 64:
-            return "Panel 1"
-        if address == 67:
-            return "Panel 2"
-
-    def parse_exp_telem(self, telem):
-        telem_structure = {
-            "THERM_PWR": {},
-            "INA": [],
-            "PANEL_TEMP": {
-                "P1": {},
-                "P2": {},
-            },
-        }
-        for chip_telem in telem:
-            ctelem_parts = chip_telem.split(",")
-            # Handle sunsensors
-            if ctelem_parts[0] == "THERM_P1":
-                telem_structure["THERM_PWR"]["P1"] = ctelem_parts[1]
-            if ctelem_parts[0] == "THERM_P2":
-                telem_structure["THERM_PWR"]["P2"] = ctelem_parts[1]
-            if ctelem_parts[0] == "I":
-                ina_telem = {
-                    "name"   : self.get_exp_ina_name(int(ctelem_parts[1])),
-                    "address": ctelem_parts[1],
-                    "shunt_V": ctelem_parts[2],
-                    "bus_V"  : ctelem_parts[3],
-                    "current_mA": ctelem_parts[4],
-                    "power_mW": "{:.2f}".format(float(ctelem_parts[4])
-                                                * float(ctelem_parts[3])),
-                }
-                telem_structure["INA"].append(ina_telem)
-            if ctelem_parts[0] == "P1A":
-                telem_structure['PANEL_TEMP']['P1']['A'] = ctelem_parts[1]
-            if ctelem_parts[0] == "P1B":
-                telem_structure['PANEL_TEMP']['P1']['B'] = ctelem_parts[1]
-            if ctelem_parts[0] == "P1C":
-                telem_structure['PANEL_TEMP']['P1']['C'] = ctelem_parts[1]
-            if ctelem_parts[0] == "P2A":
-                telem_structure['PANEL_TEMP']['P2']['A'] = ctelem_parts[1]
-            if ctelem_parts[0] == "P2B":
-                telem_structure['PANEL_TEMP']['P2']['B'] = ctelem_parts[1]
-            if ctelem_parts[0] == "P2C":
-                telem_structure['PANEL_TEMP']['P2']['C'] = ctelem_parts[1]
-        return telem_structure
