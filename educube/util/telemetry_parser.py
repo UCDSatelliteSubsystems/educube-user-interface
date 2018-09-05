@@ -192,14 +192,14 @@ def parse_adc_telem(telem):
     # MAG telem gives 'X_P', 'X_N', 'Y_P', 'Y_N'
     # the parsed telemetry packet reduces this to +1/0/-1, depending on 
     # setting. TODO: calculate this as part of a constructor for MagTorqs???   
-#    x_p, x_n, y_p, y_n = _chip_telem['MAG'] 
-#
-#    def _magnetorquer_sign(p, n):
-#        return (1 if p and not n else -1 if n and not p else 0)
-#
-#    mag_torqs = MagTorqs(X=_magnetorquer_sign(x_p, x_n), 
-#                         Y=_magnetorquer_sign(y_p, y_n) )
-    magno_torq = None
+    x_p, x_n, y_p, y_n = _chip_telem['MAG'] 
+
+    def _magnetorquer_sign(p, n):
+        return (1 if p and not n else -1 if n and not p else 0)
+
+    mag_torqs = MagTorqs(X=_magnetorquer_sign(x_p, x_n), 
+                         Y=_magnetorquer_sign(y_p, y_n) )
+#    magno_torq = None
 
     react_wheel = _chip_telem['WHL']
 
@@ -210,7 +210,7 @@ def parse_adc_telem(telem):
 
     out = ADCTelemetry(SUN_SENSORS = sun_sensors, 
                        SUN_DIR     = sun_dir    , 
-                       MAGNO_TORQ  = magno_torq , 
+                       MAGNO_TORQ  = mag_torqs  , 
                        REACT_WHEEL = react_wheel, 
                        MPU_ACC     = mpu_acc    , 
                        MPU_GYR     = mpu_gyr    , 
@@ -300,7 +300,10 @@ def parse_eps_telem(telem):
     ds18b20_b_telem = DS18B20(_chip_telem.get('DC', [None])[0])
 
     # need error handling here???? not trivial to achieve using get. EAFP??? 
-    charging_status = _chip_telem['CHARGING'] == '1'
+    _charging_val = _chip_telem.get('C', None) 
+    charging_status = (True if _charging_val == '1' 
+                       else False if _charging_val == '0'
+                       else None                         )
 
     out = EPSTelemetry(INA       = ina_telem      ,
                        DS2438    = ds2438_telem   ,

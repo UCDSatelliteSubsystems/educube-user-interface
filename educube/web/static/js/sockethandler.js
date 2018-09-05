@@ -13,9 +13,9 @@ var websocket_addr = "ws://localhost:18888/socket";
 // Note: if additional msgtypes are added, then this will have to be extended!
 // 
 //function setup_websocket(websocket_addr, telemetryhandler) {
-function setup_websocket() {
-    console.log(websocket_addr);
-    websocket = new WebSocket(websocket_addr);
+function setup_websocket(websocket_address) {
+    console.log("websocket_address : "+websocket_address);
+    websocket = new WebSocket(websocket_address);
 
     function _message_handler (event){
         _message = JSON.parse(event.data);
@@ -29,11 +29,11 @@ function setup_websocket() {
         }
     };
 
-    function _onopen() {
+    function _on_open() {
         console.log("websocket: open");
     };
 
-    function _onclose() {
+    function _on_close() {
         console.log("websocket: closed");
     };
 

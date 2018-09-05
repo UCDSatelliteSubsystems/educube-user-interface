@@ -1,6 +1,8 @@
-$(document).ready(function () {
-    hook_commands();
-});
+//$(document).ready(function () {
+//    console.log("Attaching command handlers");
+//    hook_commands();
+//    console.log("Attached command handlers");
+//});
 
 /* send_command
  *

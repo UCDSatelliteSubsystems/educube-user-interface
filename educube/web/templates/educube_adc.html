@@ -90,22 +90,26 @@
             <dl>
               <dt>X axis</dt>
               <dd>
-                  {{!if MAGNO_TORQ.X_P == 0 }}
+                  {{!if MAGNO_TORQ.X == +1 }}
                     <span class="label label-warning">Enabled (X+)</span>
-                  {{!else MAGNO_TORQ.X_N == 0}}
+                  {{!else MAGNO_TORQ.X == -1}}
                     <span class="label label-warning">Enabled (X-)</span>
-                  {{!else}}
+                  {{!else MAGNO_TORQ.X == 0}}
                     <span class="label label-default">Disabled</span>
+                  {{!else}}
+                    <span class="label label-default">ERROR</span>
                   {{!/if}}
               </dd>
               <dt>Y axis</dt>
               <dd>
-                  {{!if MAGNO_TORQ.Y_P == 0 }}
+                  {{!if MAGNO_TORQ.Y == +1 }}
                     <span class="label label-warning">Enabled (Y+)</span>
-                  {{!else MAGNO_TORQ.Y_N == 0}}
+                  {{!else MAGNO_TORQ.Y == -1}}
                     <span class="label label-warning">Enabled (Y-)</span>
-                  {{!else}}
+                  {{!else MAGNO_TORQ.Y == 0}}
                     <span class="label label-default">Disabled</span>
+                  {{!else}}
+                    <span class="label label-default">ERROR</span>
                   {{!/if}}
               </dd>
             </dl>
