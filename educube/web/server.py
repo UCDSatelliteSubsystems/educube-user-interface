@@ -61,7 +61,7 @@ class EduCubeWebApplication(tornado.web.Application):
 ##########################
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
-        self.render("educube.html")
+        self.render("educube.html", port=18888)
 
 
 class EducubeClientSocket(tornado.websocket.WebSocketHandler):

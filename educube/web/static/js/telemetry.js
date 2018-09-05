@@ -1,39 +1,84 @@
 //var websocket;
 //var websocket_addr="ws://localhost:18888/socket";
 
-var notification_stack = {
-    "dir1": "down", 
-    "dir2": "right", 
-    "push": "top",
-};
+//var notification_stack = {
+//    "dir1": "down", 
+//    "dir2": "right", 
+//    "push": "top",
+//};
 
 
-$(document).ready(function () {
-    console.log('telemetry.js setup');
-    console.log("google.maps.event.addDomListener");
-    google.maps.event.addDomListener(window, 'load', init_cdh_map);
-    console.log("google.maps.event.addDomListener -- DONE");
-    // console.log('setup_notifications');
-    // setup_notifications();
-    // console.log('setup_notifications -- DONE');
-    console.log('setup_websocket');
-    setup_websocket();
-    console.log('setup_websocket -- DONE');
-    //
-    // console.log('init_cdh_map()');
-    // init_cdh_map();
-    // console.log('init_cdh_map() -- DONE');
-    console.log('init_eps_viz()');
-    init_eps_viz();
-    console.log('init_eps_viz() -- DONE');
-    //
-    console.log('parse_existing')
-    parse_existing();
-    console.log('parse_existing -- DONE')
-    setInterval(parse_existing, 5000);
-    setInterval(update_age_timers, 500);
-    console.log('telemetry.js setup -- DONE');
-});
+//$(document).ready(function () {
+//    console.log('telemetry.js setup');
+//    console.log("google.maps.event.addDomListener");
+//    google.maps.event.addDomListener(window, 'load', init_cdh_map);
+//    console.log("google.maps.event.addDomListener -- DONE");
+//    // console.log('setup_notifications');
+//    // setup_notifications();
+//    // console.log('setup_notifications -- DONE');
+//    console.log('setup_websocket');
+//    setup_websocket();
+//    console.log('setup_websocket -- DONE');
+//    //
+//    // console.log('init_cdh_map()');
+//    // init_cdh_map();
+//    // console.log('init_cdh_map() -- DONE');
+//    console.log('init_eps_viz()');
+//    init_eps_viz();
+//    console.log('init_eps_viz() -- DONE');
+//    //
+//    console.log('parse_existing')
+//    parse_existing();
+//    console.log('parse_existing -- DONE')
+//    setInterval(parse_existing, 5000);
+//    setInterval(update_age_timers, 500);
+//    console.log('telemetry.js setup -- DONE');
+//});
+
+function TelemetryHandler() {
+    var _telemetry_store = {};
+
+
+
+
+
+    this.handle_received_telemetry = function (telemetry) {
+        if (telemetry && telemetry.type == "T"){
+            console.log("Handling telemetry from board: " + telemetry.board);
+            _telemetry_store[telemetry.board] = telemetry;
+    
+            var telem_template;
+            var telem_dom;
+            if (telemetry.board == "EPS"){
+                console.log("Updating telemetry for board: EPS");
+                telem_template = "#tmpl-eps_telem_view"; 
+                telem_dom = "#board_eps .telem_content";
+		//                eps_update_viz();
+            } else if (telemetry.board == "ADC"){
+                console.log("Updating telemetry for board: ADC");
+                telem_template = "#tmpl-adc_telem_view"; 
+                telem_dom = "#board_adc .telem_content";
+            }  else if (telemetry.board == "EXP"){
+                console.log("Updating telemetry for board: EXP");
+                telem_template = "#tmpl-exp_telem_view"; 
+                telem_dom = "#board_exp .telem_content";
+            }  else if (telemetry.board == "CDH"){
+                console.log("Updating telemetry for board: CDH");
+                telem_template = "#tmpl-cdh_telem_view"; 
+                telem_dom = "#board_cdh .telem_content";
+		//                cdh_update_map();
+            } else {
+                console.log("Unrecognised board: "+ telemetry.board);
+            }
+            var telem_html = $(telem_template).tmpl(telemetry.data);
+            $(telem_dom).html(telem_html);
+            update_telem_indicators();
+        }
+    };
+
+}
+
+
 
 function parse_existing(){
     parse_telemetry(telemetry_store['EPS']);
