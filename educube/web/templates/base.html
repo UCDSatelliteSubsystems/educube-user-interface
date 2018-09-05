@@ -75,7 +75,7 @@
   <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.15.2/locale/en-ie.js"></script>
 
   <script type="text/javascript">
-    $(document).ready(new EduCubeClientSocket( {{ port }} ));
+    $(document).ready(function() {new EduCubeClientSocket( {{ port }} );});
   </script>
 </head>
 

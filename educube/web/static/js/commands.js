@@ -5,6 +5,7 @@
 //});
 
 function CommandHandler(websocket) {
+    var self = this;
     this.websocket = websocket;
 
     this.send_command = function (command, board, settings) {
@@ -30,9 +31,10 @@ function CommandHandler(websocket) {
 
     // DOM initialisation with jQuery
     function _init() {
+        console.log("Attaching send_command callbacks");
         // this line is needed to ensure send_command is available in correct
         // scope to be called by jQuery.
-        var _send_command = this.send_command;
+        var _send_command = self.send_command;
 
         $(document).on('click', '.educube_action', function(){
             var command  = $(this).data("cmd");
@@ -41,51 +43,69 @@ function CommandHandler(websocket) {
     
             _send_command(command, board, settings);
         });
+
+        console.log("Setting up ClickSliders");
+        console.log($(".clickslider"));
+        $(".clickslider").each(function(index){
+    	    var slider = $(".cs-slider", this)[0];
+    	    var text = $(".cs-label", this)[0];
+    	    var range = {
+    		'min': $(this).data("range-min"),
+    		'max': $(this).data("range-max")
+    	    };
+    	    console.log("    Creating ClickSlider " + index);
+    	    console.log({slider : slider, text : text, range : range});
+    	    new ClickSlider(slider, text, range, _send_command);
+    	    console.log("    Creating ClickSlider -- DONE");
+    	});
+    
+        console.log("Setting up ClickSliders -- DONE");
+        console.log("Attaching send_command callbacks -- DONE");
     };
     _init();
 }
 
 
-/* send_command
- *
- */
-function send_command(command, board, settings){
-    var cmd_packet = {
-        msgtype    : 'command',
-        msgcontent : {
-            command  : command,
-            board    : board,
-            settings : settings,
-	    }
-	};
-
-    try {
-        console.log(cmd_packet);
-        var cmd_string = JSON.stringify(cmd_packet);
-	websocket.send(cmd_string);
-        provide_notice({
-            "message" : "Command sent ("+cmd_string+")", 
-            "type"    : "success"
-        });
-    }
-    catch(err) {
-        console.log(err);
-        provide_notice({"message": "Command failed", "type": "error"});
-    }
-}
-
-/* hook_commands
- *
- */ 
-function hook_commands(){
-    $(document).on('click', '.educube_action', function(){
-        var command  = $(this).data("cmd");
-        var board    = $(this).data("board");
-        var settings = $(this).data("settings");
-
-        send_command(command, board, settings);
-    });
-}
+/////* send_command
+//// *
+//// */
+////function send_command(command, board, settings){
+////    var cmd_packet = {
+////        msgtype    : 'command',
+////        msgcontent : {
+////            command  : command,
+////            board    : board,
+////            settings : settings,
+////	    }
+////	};
+////
+////    try {
+////        console.log(cmd_packet);
+////        var cmd_string = JSON.stringify(cmd_packet);
+////	websocket.send(cmd_string);
+////        provide_notice({
+////            "message" : "Command sent ("+cmd_string+")", 
+////            "type"    : "success"
+////        });
+////    }
+////    catch(err) {
+////        console.log(err);
+////        provide_notice({"message": "Command failed", "type": "error"});
+////    }
+////}
+////
+/////* hook_commands
+//// *
+//// */ 
+////function hook_commands(){
+////    $(document).on('click', '.educube_action', function(){
+////        var command  = $(this).data("cmd");
+////        var board    = $(this).data("board");
+////        var settings = $(this).data("settings");
+////
+////        send_command(command, board, settings);
+////    });
+////}
 
 //////////////////////////////////////////////////////////////////////////////
 // 

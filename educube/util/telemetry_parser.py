@@ -1,6 +1,6 @@
 #import os
 import json
-from collections import namedtuple
+from collections import namedtuple, Iterable
 
 import logging
 logger = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ class Telemetry(namedtuple('Telemetry', TELEMETRY_FIELDS)):
 
     """
     def _as_JSON(self, remove_null=False):
-        """Convert to ta JSON string."""
+        """Convert to a JSON string."""
         return json.dumps(self._as_recursive_dict(remove_null=remove_null))
 
     def _as_recursive_dict(self, remove_null=False):
@@ -37,19 +37,35 @@ def remove_value_none(d):
     return _dict
 
 
+# need to convert namedtuple data hierarchy into JSON-able form (i.e., tuples,
+# dictionaries, primitives)
+#def as_recursive_dict(obj):
+#    """Recursively parses a namedtuple to convert to dictionary."""
+#    _dict = dict()
+#    if isinstance(obj, tuple) and hasattr(obj, '_asdict'):
+#        items = obj._asdict()
+#        for item in items:
+#            if isinstance(items[item], tuple): # makes first test redundant???
+#                _dict[item] = as_recursive_dict(items[item])
+#            else:
+#                _dict[item] = items[item]
+#                               # else???
+#    return _dict
 def as_recursive_dict(obj):
-    """Recursively parses a namedtuple to convert to dictionary."""
-    _dict = dict()
-    if isinstance(obj, tuple):  # and hasattr(obj, '_asdict')???
+    """."""
+    if isinstance(obj, Iterable) and hasattr(obj, '_asdict'):
+        _dict = dict()
         items = obj._asdict()
         for item in items:
-            if isinstance(items[item], tuple): # makes first test redundant???
+            if isinstance(items[item], Iterable):
                 _dict[item] = as_recursive_dict(items[item])
             else:
-                _dict[item] = items[item]
-                               # else???
-    return _dict
-
+                _dict[item] = items[item]        
+        return _dict
+    elif isinstance(obj, Iterable) and not isinstance(obj, str):
+        return tuple(as_recursive_dict(item) for item in obj)
+    else:
+        return obj
 
 
 # 
@@ -197,8 +213,8 @@ def parse_adc_telem(telem):
     def _magnetorquer_sign(p, n):
         return (1 if p and not n else -1 if n and not p else 0)
 
-    mag_torqs = MagTorqs(X=_magnetorquer_sign(x_p, x_n), 
-                         Y=_magnetorquer_sign(y_p, y_n) )
+    mag_torqs = MagTorqs(X=_magnetorquer_sign(int(x_p), int(x_n)), 
+                         Y=_magnetorquer_sign(int(y_p), int(y_n)) )
 #    magno_torq = None
 
     react_wheel = _chip_telem['WHL']
@@ -351,12 +367,27 @@ def parse_exp_telem(telem):
                           command_id     = None                            )
                  for ina_parts in ina_chips                                 ]
 
-    panel_temp = Panels(P1 = Panel(A = _chip_telem.get('P1A', [None])[0],
-                                   B = _chip_telem.get('P1B', [None])[0],
-                                   C = _chip_telem.get('P1C', [None])[0],),
-                        P2 = Panel(A = _chip_telem.get('P2A', [None])[0],
-                                   B = _chip_telem.get('P2B', [None])[0],
-                                   C = _chip_telem.get('P2C', [None])[0],))
+    # panel temperatures. NOTE: there is a bug in the way this telemetry is
+    # formed, meaning that the panel temperatures may be truncated.
+    panels = list()
+    for n in (1, 2):
+        panel = list()
+        for p in ('A', 'B', 'C'):
+            try:
+                key = 'P{n}{p}'.format(n=n, p=p)
+                panel.append(_chip_telem[key][0])
+            except:
+                panel.append(None)
+
+        panels.append(Panel(*panel))
+    panel_temp = Panels(*panels)
+
+#    panel_temp = Panels(P1 = Panel(A = _chip_telem.get('P1A', [None])[0],
+#                                   B = _chip_telem.get('P1B', [None])[0],
+#                                   C = _chip_telem.get('P1C', [None])[0],),
+#                        P2 = Panel(A = _chip_telem.get('P2A', [None])[0],
+#                                   B = _chip_telem.get('P2B', [None])[0],
+#                                   C = _chip_telem.get('P2C', [None])[0],))
 
     out = EXPTelemetry(THERM_PWR  = therm_pwr ,
                        INA        = ina_telem ,

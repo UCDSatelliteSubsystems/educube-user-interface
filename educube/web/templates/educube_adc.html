@@ -10,16 +10,18 @@
       <div class="panel-body">
         <div class="row">
           <div class="col-sm-3">
-            <div class="row">
+            <div class="clickslider row" 
+                data-range-min='0' data-range-max='100'>
               <div class="col-sm-4">
                 <label for="spdslider">
-                  Wheel Power (<span id="spdtxt">0</span>%)
+                  Wheel Power (<span class="cs-label">0</span>%)
                 </label>
               </div>
               <div class="col-sm-8">
-                <div id="spdslider" data-board='ADC' data-cmd='REACT'></div>
+                <div class="cs-slider" id="spdslider"
+                    data-board='ADC' data-cmd='REACT'></div>
               </div>
-            </div>
+            </div><!--/clickslider-->
           </div>
           <div class="col-sm-6">
             <div class="row">

@@ -38,10 +38,6 @@
 function TelemetryHandler() {
     var _telemetry_store = {};
 
-
-
-
-
     this.handle_received_telemetry = function (telemetry) {
         if (telemetry && telemetry.type == "T"){
             console.log("Handling telemetry from board: " + telemetry.board);
@@ -76,7 +72,28 @@ function TelemetryHandler() {
         }
     };
 
+    function update_age_timers(){
+        var d = new Date();
+        var millis = d.getTime();
+        $('.age-counter').each(function(){
+            var age = (millis - parseInt($(this).parent().data("age")))/1000;
+            $(this).html(parseInt(age));
+            if (age > 30){
+                $(this).parent().removeClass("label-success")
+                                .addClass("label-warning");
+            }
+        });
+    }
+
+
+    // configure age counter and map
+    function _init() {
+        setInterval(update_age_timers, 500);
+    };
+    _init();
+
 }
+
 
 
 
