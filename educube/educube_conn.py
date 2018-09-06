@@ -14,7 +14,7 @@ from math import fabs
 import logging
 logger = logging.getLogger(__name__)
 
-from educube.util.telemetry_parser import TelemetryParser
+from educube.telemetry_parser import TelemetryParser
 parser = TelemetryParser()   # should this be a) replaced by a function or b)
                              # an object attribute of the EducubeConnection
                              # object?

@@ -43,7 +43,7 @@ class EduCubeWebApplication(tornado.web.Application):
     def __init__(self, educube_connection, port):
         handlers = [
             (r"/", MainHandler),
-            (r"/socket", EducubeClientSocket, 
+            (r"/socket", EduCubeServerSocket, 
              {'educube_connection' : educube_connection}),
         ]
         settings = {
@@ -64,7 +64,7 @@ class MainHandler(tornado.web.RequestHandler):
         self.render("educube.html", port=18888)
 
 
-class EducubeClientSocket(tornado.websocket.WebSocketHandler):
+class EduCubeServerSocket(tornado.websocket.WebSocketHandler):
     """."""
     _sockets = set()
 
@@ -156,7 +156,7 @@ def handle_command(educube, board, cmd, settings):
 
 
 
-# should this be moved to become a method of EducubeClientSocket??? Both
+# should this be moved to become a method of EduCubeServerSocket??? Both
 # educube and sockets could then be provided as attributes. 
 # the parser should be moved into Educube
 def handle_telemetry_updates(educube, sockets):

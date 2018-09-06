@@ -5,43 +5,43 @@ import pkg_resources
 import serial.tools.list_ports
 
 from educube.web import server as webserver
-from educube.util import educube_conn as educonn
-from educube.util.logging_utils import configure_logging
+from educube import educube_conn as educonn
+from educube.util import (configure_logging, verify_serial_connection, 
+                          suggest_serial, suggest_baud) 
 
 import logging
 logger = logging.getLogger(__name__)
 
-
-def verify_serial_connection(port, baud):
-    try:
-        ser = serial.Serial(port, baud, timeout=1)
-        a = ser.read()
-        if a:
-            logger.debug('Serial open: {port}'.format(port=port))
-        else:
-            msg = ('Serial exists but is not readable '
-                   +'(permissions?): {port}'.format(port=port))
-            logger.debug(msg)
-        ser.close()
-    except serial.serialutil.SerialException as e:
-        raise click.BadParameter("Serial not readable: {exc}".format(exc=e))
-
-##############################
-# COMMANDS
-##############################
-
-def suggest_serial():
-    ports = serial.tools.list_ports.comports()
-    suggested_educube_port = ports[-1]
-    return suggested_educube_port.device
-
-def suggest_baud():
-    ports = serial.tools.list_ports.comports()
-    suggested_educube_port = ports[-1]
-    if suggested_educube_port.description in ('BASE', 'Base Station'):
-        return 9600
-    else:
-        return 115200
+#def verify_serial_connection(port, baud):
+#    try:
+#        ser = serial.Serial(port, baud, timeout=1)
+#        a = ser.read()
+#        if a:
+#            logger.debug('Serial open: {port}'.format(port=port))
+#        else:
+#            msg = ('Serial exists but is not readable '
+#                   +'(permissions?): {port}'.format(port=port))
+#            logger.debug(msg)
+#        ser.close()
+#    except serial.serialutil.SerialException as e:
+#        raise click.BadParameter("Serial not readable: {exc}".format(exc=e))
+#
+###############################
+## COMMANDS
+###############################
+#
+#def suggest_serial():
+#    ports = serial.tools.list_ports.comports()
+#    suggested_educube_port = ports[-1]
+#    return suggested_educube_port.device
+#
+#def suggest_baud():
+#    ports = serial.tools.list_ports.comports()
+#    suggested_educube_port = ports[-1]
+#    if suggested_educube_port.description in ('BASE', 'Base Station'):
+#        return 9600
+#    else:
+#        return 115200
 
 ##############################
 # COMMAND LINE INTERFACE
