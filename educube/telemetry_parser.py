@@ -257,9 +257,14 @@ def parse_cdh_telem(telem):
 
     # parse gps_telem
     _, *gps_telem_parts = gps_telem.split(',')
-    # this makes up for poor onboard formatting
-    gps_date       = (dt.strptime(gps_telem_parts[0], '%y/%m/%dT%H:%M:%S')\
-                        .strftime(format='%Y/%m/%d  %H:%M:%S')             )
+    # this makes up for poor onboard formatting. NOTE: the default date when
+    # no GPS telemetry received is 0/1/1T0:0:0, which is not a valid date!
+    # This error is caught and None returned.
+    try:
+        gps_date = (dt.strptime(gps_telem_parts[0], '%y/%m/%dT%H:%M:%S')\
+                      .strftime(format='%Y/%m/%d  %H:%M:%S')             )
+    except ValueError:
+        gps_date = None
 
     gps_fix        = GPSFix(LAT = gps_telem_parts[1],
                             LON = gps_telem_parts[2] )

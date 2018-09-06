@@ -74,26 +74,39 @@ function TelemetryHandler() {
 
 
     function update_telem_indicators(){
-        // ADC 
-        var status_html = $('#tmpl-telem_status').tmpl({
-            "telem" : telemetry_store['ADC']
-         });
-        $('#telem_status_adc').html(status_html);
-        // EXP 
-        var status_html = $('#tmpl-telem_status').tmpl({
-            "telem" : telemetry_store['EXP']
-         });
-        $('#telem_status_exp').html(status_html);
-        // CDH 
-        var status_html = $('#tmpl-telem_status').tmpl({
-            "telem" : telemetry_store['CDH']
-        });
-        $('#telem_status_cdh').html(status_html);
-        // EPS 
-        var status_html = $('#tmpl-telem_status').tmpl(
-            {"telem":telemetry_store['EPS']
-        });
-        $('#telem_status_eps').html(status_html);
+        function _update_indicator(board, board_dom){
+            var _status_html = $('#tmpl-telem_status').tmpl({
+		    "telem" : telemetry_store[board],
+		});
+	    $(board_dom).html(_status_html);
+            console.log($(board_dom));
+            console.log($(board_dom).html());
+	};
+        _update_indicator('ADC', '#telem_status_adc');
+        _update_indicator('CDH', '#telem_status_cdh');
+        _update_indicator('EPS', '#telem_status_eps');
+        _update_indicator('EXP', '#telem_status_exp');
+
+//        // ADC 
+//        var status_html = $('#tmpl-telem_status').tmpl({
+//            "telem" : telemetry_store['ADC']
+//         });
+//        $('#telem_status_adc').html(status_html);
+//        // EXP 
+//        var status_html = $('#tmpl-telem_status').tmpl({
+//            "telem" : telemetry_store['EXP']
+//         });
+//        $('#telem_status_exp').html(status_html);
+//        // CDH 
+//        var status_html = $('#tmpl-telem_status').tmpl({
+//            "telem" : telemetry_store['CDH']
+//        });
+//        $('#telem_status_cdh').html(status_html);
+//        // EPS 
+//        var status_html = $('#tmpl-telem_status').tmpl(
+//            {"telem":telemetry_store['EPS']
+//        });
+//        $('#telem_status_eps').html(status_html);
     };
 
     function update_age_timers(){
