@@ -176,8 +176,8 @@ def handle_telemetry_updates(educube, sockets):
         for _telemetry in telemetry_packets:
             try: 
                 _telemetry_json = json.dumps({
-                    'msgtype'    : 'telemetry'                    , 
-                    'msgcontent' : _telemetry._as_recursive_dict()
+                    'msgtype'    : 'telemetry'             , 
+                    'msgcontent' : _telemetry._serialised()
                 })
             except:
                 errmsg = ("Error encountered while converting the following "

@@ -1,5 +1,6 @@
 #import os
 import json
+from datetime import datetime as dt
 from collections import namedtuple, Iterable
 
 import logging
@@ -15,16 +16,17 @@ class Telemetry(namedtuple('Telemetry', TELEMETRY_FIELDS)):
     Extends namedtuple to simplify conversion to JSON. 
 
     """
-    def _as_JSON(self, remove_null=False):
-        """Convert to a JSON string."""
-        return json.dumps(self._as_recursive_dict(remove_null=remove_null))
-
-    def _as_recursive_dict(self, remove_null=False):
+    def _serialised(self, remove_null=False):
         """Convert all namedtuple attributes to dictionaries."""
         if remove_null:
-            return remove_value_none(as_recursive_dict(self))
+            return remove_value_none(serialise(self))
         else:
-            return as_recursive_dict(self)
+            return serialise(self)
+
+    def _as_JSON(self, remove_null=False):
+        """Convert to a JSON string."""
+        return json.dumps(self._serialised(remove_null=remove_null))
+
 
 def remove_value_none(d):
     """Recursively traverse a dictionary to remove keys with value None."""
@@ -51,19 +53,26 @@ def remove_value_none(d):
 #                _dict[item] = items[item]
 #                               # else???
 #    return _dict
-def as_recursive_dict(obj):
-    """."""
+def serialise(obj):
+    """
+    Convert a hierarchy of namedtuples into primitives and dicts.
+
+    This function recursively traverses a hierarchy of iterables, looking for
+    namedtuple objects and converting them into dictionaries. The resulting
+    object should then be parseable as valid JSON.
+
+    """
     if isinstance(obj, Iterable) and hasattr(obj, '_asdict'):
         _dict = dict()
         items = obj._asdict()
         for item in items:
             if isinstance(items[item], Iterable):
-                _dict[item] = as_recursive_dict(items[item])
+                _dict[item] = serialise(items[item])
             else:
                 _dict[item] = items[item]        
         return _dict
     elif isinstance(obj, Iterable) and not isinstance(obj, str):
-        return tuple(as_recursive_dict(item) for item in obj)
+        return tuple(serialise(item) for item in obj)
     else:
         return obj
 
@@ -248,7 +257,10 @@ def parse_cdh_telem(telem):
 
     # parse gps_telem
     _, *gps_telem_parts = gps_telem.split(',')
-    gps_date       = gps_telem_parts[0]
+    # this makes up for poor onboard formatting
+    gps_date       = (dt.strptime(gps_telem_parts[0], '%y/%m/%dT%H:%M:%S')\
+                        .strftime(format='%Y/%m/%d  %H:%M:%S')             )
+
     gps_fix        = GPSFix(LAT = gps_telem_parts[1],
                             LON = gps_telem_parts[2] )
     # Why doesn't this convert to degrees and minutes???
