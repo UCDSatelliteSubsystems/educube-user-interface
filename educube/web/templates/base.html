@@ -10,12 +10,11 @@
 
   <title>EduCube Web Interface | UCD Space Science & Technology</title>
 
-  <!-- Bootstrap Core JavaScript -->
   <!-- jQuery -->
   <script src="{{ static_url("libraries/jquery/jquery.js") }}"></script>  
-
   <!-- jQuery template engine -->
-  <script src="{{ static_url("libraries/jquery/jquery.tmpl.min.js") }}"></script>
+  <script src="{{ static_url("libraries/jquery/jquery.tmpl.min.js") }}">
+  </script>
   <!-- Charting -->
   <script src="{{ static_url("libraries/highcharts/highcharts.js") }}">
   </script>
@@ -23,25 +22,19 @@
     rel="stylesheet">
 
   <!-- Bootstrap -->
-  <script src="{{ static_url("libraries/bootstrap/bootstrap.js") }}">
+  <link href="{{ static_url("libraries/bootstrap/css/bootstrap.css") }}" 
+    rel="stylesheet">
+  <script src="{{ static_url("libraries/bootstrap/js/bootstrap.js") }}">
   </script>    
-  <link href="{{ static_url("libraries/bootstrap/bootstrap.css") }}" 
-    rel="stylesheet">
 
-  <!-- Sexy notifications -->
-  <!-- 
-  <link href="{{ static_url("libraries/pnotify/pnotify.custom.min.css") }}" rel="stylesheet">
-  <script src="{{ static_url("libraries/pnotify/pnotify.custom.min.js") }}">
-  </script>
-  -->
-  <link href="{{ static_url("libraries/animate.css") }}" 
-    rel="stylesheet">
+  <!-- openlayers mapping library -->
+  <link href="{{ static_url("libraries/openlayers/ol.css")}}" 
+    rel="stylesheet" type="text/css">
+  <script src="{{ static_url("libraries/openlayers/ol.js") }}"></script>
 
-  <!-- Custom CSS -->
+
   <link href="{{ static_url("libraries/portfolio-item.css") }}" 
     rel="stylesheet">
-  
-  <!-- Charting -->
 
   <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
   <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -50,25 +43,29 @@
       <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
   <![endif]-->
 
-  <!-- noUiSlider -->
+  <!-- noUiSlider + ClickSlider -->
   <link href="{{ static_url("libraries/nouislider/nouislider.css") }}" 
     rel="stylesheet">
+
   <script src="{{ static_url("libraries/nouislider/nouislider.js") }}">
   </script>
 
   <script src="{{ static_url("js/clickslider.js")}}"></script>
 
-  <!-- CSS (removed from style tags in earlier html versions -->
+  <!-- Custom CSS (incl. removed from style tags in earlier html versions -->
   <link href="{{ static_url("css/educube.css")}}" 
     rel="stylesheet" type="text/css">
   <link href="{{ static_url("css/telemetry.css")}}"
     rel="stylesheet" type="text/css">
 
+  <link href="{{ static_url("libraries/animate.css") }}" 
+    rel="stylesheet">
 
   <!-- EduCube JS -->
   <script src="{{ static_url("js/sockethandler.js") }}"></script>
   <script src="{{ static_url("js/telemetry.js") }}"></script>
   <script src="{{ static_url("js/commands.js") }}"></script>
+  <script src="{{ static_url("js/gps_map.js") }}"></script>
   <script src="{{ static_url("js/educube.js") }}"></script>
   
   <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.15.2/moment.min.js"></script>

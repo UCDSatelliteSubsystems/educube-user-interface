@@ -42,3 +42,10 @@ body {
 .board-status {
     float: right;
 }
+
+
+.gps-map {
+    margin: auto;
+    height: 500px;
+    width: 80%;
+}

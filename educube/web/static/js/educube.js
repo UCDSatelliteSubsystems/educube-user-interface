@@ -17,6 +17,13 @@ function EduCubeClientSocket(port) {
                                            telemetryhandler  );
         commandhandler   = new CommandHandler(socket);
     
+        console.log('map');
+        console.log($('#gps-map'));
+	//        gps_map = new MyMap($('#gps-map'));
+        gps_map = new MyMap('gps-map');
+        console.log(gps_map.map);
+        console.log('map -- DONE');
+
         console.log("EduCube JavaScript setup complete.");
     };
     _client_setup();
