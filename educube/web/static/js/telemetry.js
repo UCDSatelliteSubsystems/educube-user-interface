@@ -72,7 +72,6 @@ function TelemetryHandler() {
         }
     };
 
-
     function update_telem_indicators(){
         function _update_indicator(board, board_dom){
             var _status_html = $('#tmpl-telem_status').tmpl({

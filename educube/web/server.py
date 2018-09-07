@@ -13,11 +13,8 @@ interface.
 
 """
 
-
-
 import os
 import json
-import time
 import webbrowser
 
 import tornado.web
@@ -65,7 +62,10 @@ class MainHandler(tornado.web.RequestHandler):
 
 
 class EduCubeServerSocket(tornado.websocket.WebSocketHandler):
-    """."""
+    """
+    WebSocket handler to send telemetry & receive commands from web interface.
+
+    """
     _sockets = set()
 
     def __init__(self, application, request, educube_connection, **kwargs):
@@ -154,8 +154,6 @@ def handle_command(educube, board, cmd, settings):
     elif board == 'EXP' and cmd =='HEAT':
         educube.send_set_thermal_panel(**settings)
 
-
-
 # should this be moved to become a method of EduCubeServerSocket??? Both
 # educube and sockets could then be provided as attributes. 
 # the parser should be moved into Educube
@@ -169,8 +167,7 @@ def handle_telemetry_updates(educube, sockets):
 
         # when an error is encountered in parsing the data,
         # educube.parse_telemetry() returns None. This then causes another
-        # error to be thrown when turning to JSON. We need to filter out
-        # NoneTypes.
+        # error when turning to JSON, so we need to filter out None.
         telemetry_packets = (t for t in telemetry_packets if t is not None)
 
         for _telemetry in telemetry_packets:
