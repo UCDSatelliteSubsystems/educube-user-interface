@@ -1,41 +1,6 @@
-//var websocket;
-//var websocket_addr="ws://localhost:18888/socket";
+var UCD = { lon : -6.2236, lat : 53.3083 };
 
-//var notification_stack = {
-//    "dir1": "down", 
-//    "dir2": "right", 
-//    "push": "top",
-//};
-
-
-//$(document).ready(function () {
-//    console.log('telemetry.js setup');
-//    console.log("google.maps.event.addDomListener");
-//    google.maps.event.addDomListener(window, 'load', init_cdh_map);
-//    console.log("google.maps.event.addDomListener -- DONE");
-//    // console.log('setup_notifications');
-//    // setup_notifications();
-//    // console.log('setup_notifications -- DONE');
-//    console.log('setup_websocket');
-//    setup_websocket();
-//    console.log('setup_websocket -- DONE');
-//    //
-//    // console.log('init_cdh_map()');
-//    // init_cdh_map();
-//    // console.log('init_cdh_map() -- DONE');
-//    console.log('init_eps_viz()');
-//    init_eps_viz();
-//    console.log('init_eps_viz() -- DONE');
-//    //
-//    console.log('parse_existing')
-//    parse_existing();
-//    console.log('parse_existing -- DONE')
-//    setInterval(parse_existing, 5000);
-//    setInterval(update_age_timers, 500);
-//    console.log('telemetry.js setup -- DONE');
-//});
-
-function TelemetryHandler() {
+function TelemetryHandler(gps_map) {
     var _telemetry_store = {};
 
     this.handle_received_telemetry = function (telemetry) {
@@ -62,17 +27,17 @@ function TelemetryHandler() {
                 console.log("Updating telemetry for board: CDH");
                 telem_template = "#tmpl-cdh_telem_view"; 
                 telem_dom = "#board_cdh .telem_content";
-		//                cdh_update_map();
+		_cdh_update_gps_map();
             } else {
                 console.log("Unrecognised board: "+ telemetry.board);
             }
             var telem_html = $(telem_template).tmpl(telemetry.data);
             $(telem_dom).html(telem_html);
-            update_telem_indicators();
+            update_telemetry_indicators();
         }
     };
 
-    function update_telem_indicators(){
+    function update_telemetry_indicators(){
         function _update_indicator(board, board_dom){
             var _status_html = $('#tmpl-telem_status').tmpl({
 		    "telem" : _telemetry_store[board],
@@ -96,12 +61,24 @@ function TelemetryHandler() {
                                 .addClass("label-warning");
             }
         });
-    }
+    };
+
+    function _cdh_update_gps_map(){
+        _pos = { 
+	    lon : telemetry_store['CDH']['data']['GPS_FIX']['LON'],
+	    lat : telemetry_store['CDH']['data']['GPS_FIX']['LAT'],
+	};
+        // the first argument is the index of the marker in
+        // GPSMap._markers. This is included to allow for a future extension
+        // to multiple markers, but is currently hard-coded to zero.
+        gps_map.update_marker(0, _pos.lon, _pos.lat);
+    };
 
 
     // configure age counter and map
     function _init() {
         setInterval(update_age_timers, 500);
+        gps_map.add_marker(UCD.lon, UCD.lat);
     };
     _init();
 

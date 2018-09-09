@@ -266,16 +266,20 @@ def parse_cdh_telem(telem):
     except ValueError:
         gps_date = None
 
-    gps_fix        = GPSFix(LAT = gps_telem_parts[1],
-                            LON = gps_telem_parts[2] )
+    # should this be recast to a fixed precision string???
+    gps_fix        = GPSFix(LAT = float(gps_telem_parts[1])/1e7,
+                            LON = float(gps_telem_parts[2])/1e7 )
     # Why doesn't this convert to degrees and minutes???
     gps_fix_degmin = GPSFix(LAT = float(gps_telem_parts[1])/1e7,
                             LON = float(gps_telem_parts[2])/1e7 )
-    # Why is STATUS = 'No Fix' hard coded????
+    # extract the gps status -- if status unknown, return 'No Fix'
+    gps_status_int = gps_telem_parts[5]
+    gps_status = GPS_STATUS.get(gps_status_int, 'No Fix')
+    # assemble GPS meta data
     gps_meta       = GPSMeta(HDOP       = gps_telem_parts[3],
                              ALT_CM     = gps_telem_parts[4],
-                             STATUS_INT = gps_telem_parts[5],
-                             STATUS     = 'No Fix'           ) 
+                             STATUS_INT = gps_status_int    ,
+                             STATUS     = gps_status         ) 
 
     # parse sep_telem
     _, sep_status_id, *board_hotplug_statuses = sep_telem.split(',')
