@@ -65,8 +65,8 @@ function TelemetryHandler(gps_map) {
 
     function _cdh_update_gps_map(){
         _pos = { 
-	    lon : telemetry_store['CDH']['data']['GPS_FIX']['LON'],
-	    lat : telemetry_store['CDH']['data']['GPS_FIX']['LAT'],
+	    lon : _telemetry_store['CDH']['data']['GPS_FIX']['LON'],
+	    lat : _telemetry_store['CDH']['data']['GPS_FIX']['LAT'],
 	};
         // the first argument is the index of the marker in
         // GPSMap._markers. This is included to allow for a future extension

@@ -78,7 +78,7 @@ def start(serial, baud, board, fake, port=18888):
         verify_serial_connection(serial, baud)
 
     conn_params = {"type": "serial",
-                   "port": serial,   # NOTE: SERIAL PORT, NOT SOCKET!!!!
+                   "port": serial,  # NOTE: SERIAL PORT, NOT WEBSOCKET PORT!!!
                    "baud": baud,
                    "board": board,
                    "fake": fake,
