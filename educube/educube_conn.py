@@ -15,10 +15,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from educube.util import millis
-from educube.telemetry_parser import TelemetryParser
-parser = TelemetryParser()   # should this be a) replaced by a function or b)
-                             # an object attribute of the EduCubeConnection
-                             # object?
+from educube.telemetry_parser import parse_educube_telemetry
 
 class EduCubeConnectionError(Exception):
     """Exception to be raised for errors when communicating with EduCube."""
@@ -386,9 +383,9 @@ class EduCubeConnection():
         _raw_telemetry = self.read_telemetry_buffer()
 
         parsed_telemetry = [
-            parser.parse_telemetry(_timestamp                      , 
-                                   _telemetry_bytes.decode('utf-8') ) 
-            for _timestamp, _telemetry_bytes in _raw_telemetry       ]
+            parse_educube_telemetry(_timestamp                      , 
+                                    _telemetry_bytes.decode('utf-8') ) 
+            for _timestamp, _telemetry_bytes in _raw_telemetry        ]
  
         return parsed_telemetry
 

@@ -1,0 +1,1 @@
+from ._telemetry_parser import parse_educube_telemetry
