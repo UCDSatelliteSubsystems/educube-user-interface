@@ -156,7 +156,7 @@ def handle_command(educube, board, cmd, settings):
 
 # should this be moved to become a method of EduCubeServerSocket??? Both
 # educube and sockets could then be provided as attributes. 
-# the parser should be moved into Educube
+# the parser should be moved into EduCube
 def handle_telemetry_updates(educube, sockets):
     """
     Creates a function to be called periodically to send updated telemetry. 
@@ -203,7 +203,7 @@ def handle_telemetry_updates(educube, sockets):
 #######################
 def run(educube_connection, port):
     """
-    Start and run the IOLoop, given an EducubeConnection object to handle.
+    Start and run the IOLoop, given an EduCubeConnection object to handle.
     """
     application = EduCubeWebApplication(educube_connection, port)
     http_server = tornado.httpserver.HTTPServer(application)

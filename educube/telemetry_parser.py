@@ -28,31 +28,8 @@ class Telemetry(namedtuple('Telemetry', TELEMETRY_FIELDS)):
         return json.dumps(self._serialised(remove_null=remove_null))
 
 
-def remove_value_none(d):
-    """Recursively traverse a dictionary to remove keys with value None."""
-    _dict = dict()
-    for key, val in d.items():
-        if isinstance(val, dict):
-            _dict[key] = remove_value_none(val)
-        elif val is not None:
-            _dict[key] = val
-    return _dict
-
-
 # need to convert namedtuple data hierarchy into JSON-able form (i.e., tuples,
 # dictionaries, primitives)
-#def as_recursive_dict(obj):
-#    """Recursively parses a namedtuple to convert to dictionary."""
-#    _dict = dict()
-#    if isinstance(obj, tuple) and hasattr(obj, '_asdict'):
-#        items = obj._asdict()
-#        for item in items:
-#            if isinstance(items[item], tuple): # makes first test redundant???
-#                _dict[item] = as_recursive_dict(items[item])
-#            else:
-#                _dict[item] = items[item]
-#                               # else???
-#    return _dict
 def serialise(obj):
     """
     Convert a hierarchy of namedtuples into primitives and dicts.
@@ -76,9 +53,20 @@ def serialise(obj):
     else:
         return obj
 
+def remove_value_none(d):
+    """Recursively traverse a dictionary to remove keys with value None."""
+    _dict = dict()
+    for key, val in d.items():
+        if isinstance(val, dict):
+            _dict[key] = remove_value_none(val)
+        elif val is not None:
+            _dict[key] = val
+    return _dict
 
-# 
-# 
+
+############################################################################## 
+# namedtuples for individual board/chip telemetries
+##############################################################################
 ADC_FIELDS = ('SUN_SENSORS', #
               'SUN_DIR'    , #
               'MAGNO_TORQ' , #
@@ -188,11 +176,10 @@ SEPARATION_STATUS = {
     '2' : "In Launch Adapter",
     }
 
-
-#def parse_
-
-
-def parse_adc_telem(telem):
+##############################################################################
+#
+##############################################################################
+def _parse_adc_telem(telem):
     """."""
     # convert the received telemetry to a dictionary with the chip identifiers
     # as keys. The MPU chips have to be handled as special cases -- we give
@@ -243,7 +230,7 @@ def parse_adc_telem(telem):
     return out
 
 
-def parse_cdh_telem(telem):
+def _parse_cdh_telem(telem):
     """
     Extract and process telemetry structure.
 
@@ -301,7 +288,7 @@ def parse_cdh_telem(telem):
     return out
 
 
-def parse_eps_telem(telem):
+def _parse_eps_telem(telem):
     """."""
     _chip_telem = dict()
     for ct in telem:
@@ -351,7 +338,7 @@ def parse_eps_telem(telem):
     
 
 
-def parse_exp_telem(telem):
+def _parse_exp_telem(telem):
     """."""
 
     # convert the received telemetry to a dictionary with the chip identifiers
@@ -389,7 +376,8 @@ def parse_exp_telem(telem):
                  for ina_parts in ina_chips                                 ]
 
     # panel temperatures. NOTE: there is a bug in the way this telemetry is
-    # formed, meaning that the panel temperatures may be truncated.
+    # formed, meaning that the panel temperatures may be truncated. This
+    # exception is caught and None returned
     panels = list()
     for n in (1, 2):
         panel = list()
@@ -403,13 +391,6 @@ def parse_exp_telem(telem):
         panels.append(Panel(*panel))
     panel_temp = Panels(*panels)
 
-#    panel_temp = Panels(P1 = Panel(A = _chip_telem.get('P1A', [None])[0],
-#                                   B = _chip_telem.get('P1B', [None])[0],
-#                                   C = _chip_telem.get('P1C', [None])[0],),
-#                        P2 = Panel(A = _chip_telem.get('P2A', [None])[0],
-#                                   B = _chip_telem.get('P2B', [None])[0],
-#                                   C = _chip_telem.get('P2C', [None])[0],))
-
     out = EXPTelemetry(THERM_PWR  = therm_pwr ,
                        INA        = ina_telem ,
                        PANEL_TEMP = panel_temp )
@@ -422,16 +403,11 @@ class TelemetryParserException(Exception):
 
 class TelemetryParser(object):
     board_parsers = {
-        "ADC" : parse_adc_telem,
-        "CDH" : parse_cdh_telem,
-        "EPS" : parse_eps_telem,
-        "EXP" : parse_exp_telem,
+        "ADC" : _parse_adc_telem,
+        "CDH" : _parse_cdh_telem,
+        "EPS" : _parse_eps_telem,
+        "EXP" : _parse_exp_telem,
     }
-
-    TELEM_IDENTIFER = "T"
-
-    last_board_telemetry = {}
-    
     # -- changed to take telemetry as a unicode string, not bytes.
     # -- shouldn't the check that this is telemetry happen before the parser?
     #    Therefore, isn't _telem_type always just going to be T?
@@ -475,18 +451,6 @@ class TelemetryParser(object):
             logger.exception(errmsg, exc_info=True)
             return
 
-
-#        if telem_type == self.TELEM_IDENTIFER:
-#            for bname, board in self.BOARD_CONFIG.items():
-#                if telem_board == board['ID']:
-#                    parser = getattr(self, board['parser'], None)
-#                    if parser:
-#                        parsed_telem = parser(telem_parts[2:])
-#                        telem_struct['data'] = parsed_telem
-#                        self.last_board_telemetry[board['ID']] = parsed_telem
-#                    else:
-#                        errmsg = ("Wrong parser defined for {bname} board: {parser}".format(bname=bname, parser=board['parser']))
-#                        logger.error(errmsg)
 
         out = Telemetry(time  = timestamp                  ,
                         type  = _telem_type                ,

@@ -14,21 +14,17 @@ from math import fabs
 import logging
 logger = logging.getLogger(__name__)
 
+from educube.util import millis
 from educube.telemetry_parser import TelemetryParser
 parser = TelemetryParser()   # should this be a) replaced by a function or b)
-                             # an object attribute of the EducubeConnection
+                             # an object attribute of the EduCubeConnection
                              # object?
 
-def millis():
-    """Current system time in milliseconds."""
-    return int(round(time.time() * 1000))
-
-
-class EducubeConnectionError(Exception):
+class EduCubeConnectionError(Exception):
     """Exception to be raised for errors when communicating with EduCube."""
 
 
-class EducubeConnectionThread(Thread):
+class EduCubeConnectionThread(Thread):
     """Thread that records and requests telemetry on serial port."""
     def __init__(self, master, eol=b'\r\n'):
         """
@@ -36,7 +32,7 @@ class EducubeConnectionThread(Thread):
 
         Parameters
         ----------
-        master : EducubeConnection
+        master : EduCubeConnection
             The controlling interface to the EduCube 
         eol : bytes
 
@@ -84,7 +80,7 @@ class EducubeConnectionThread(Thread):
                     > self.master.telem_request_interval_s  ):
                 self.master.send_request_telem()
 
-        logger.info("EducubeConnectionThread.run has ended")
+        logger.info("EduCubeConnectionThread.run has ended")
 
 def is_telemetry(buffer):
     return buffer.lstrip().startswith(b'T|')
@@ -92,7 +88,7 @@ def is_telemetry(buffer):
 def is_debug(buffer):
     return buffer.lstrip().startswith(b'DEBUG|')
 
-class EducubeConnection():
+class EduCubeConnection():
     """
     Serial interface to send commands to and receive telemetry from an EduCube.
 
@@ -120,7 +116,7 @@ class EducubeConnection():
     def __init__(self, portname, board, baud=9600, timeout=5,
                  output_path=None, telem_request_interval_s=5):
         """
-        Constructor. Sets up the EducubeConnection object. 
+        Constructor. Sets up the EduCubeConnection object. 
 
         Parameters
         ----------
@@ -144,7 +140,7 @@ class EducubeConnection():
         if board not in (self.board_id_EPS, self.board_id_CDH, 
                          self.board_id_EXP, self.board_id_ADC ):
             errmsg = 'Invalid board identifier {board}'.format(board=board)
-            raise EducubeConnectionError(errmsg)
+            raise EduCubeConnectionError(errmsg)
 
         # file to save telemetry
         if output_path:
@@ -176,7 +172,7 @@ class EducubeConnection():
     ################
 
     def setup_connections(self):
-        logger.info("STARTUP : Setting up Educube connections")
+        logger.info("STARTUP : Setting up EduCube connections")
 
         self.output_file = open(self.output_path, 'a')
         logger.info("STARTUP : Telemetry will be saved to {path}"\
@@ -188,7 +184,7 @@ class EducubeConnection():
                     .format(ser=repr(self.connection))   )
 
     def teardown_connections(self):
-        logger.info("SHUTDOWN : Closing Educube connections")
+        logger.info("SHUTDOWN : Closing EduCube connections")
 
         self.connection.close()
         logger.info("SHUTDOWN : Closed Serial connection")
@@ -201,14 +197,14 @@ class EducubeConnection():
     ################
 
     def start_thread(self):
-        logger.debug("STARTUP : Starting EducubeConnectionThread")
-        self.thread = EducubeConnectionThread(self)
+        logger.debug("STARTUP : Starting EduCubeConnectionThread")
+        self.thread = EduCubeConnectionThread(self)
         self.running = True
         self.thread.start()
         self.lock = Lock()
 
     def stop_thread(self):
-        logger.debug("SHUTDOWN : Stopping EducubeConnectionThread")
+        logger.debug("SHUTDOWN : Stopping EduCubeConnectionThread")
         self.running = False
         self.thread.join()
 
@@ -269,7 +265,7 @@ class EducubeConnection():
         if board not in [self.board_id_EPS, self.board_id_CDH,
                          self.board_id_EXP, self.board_id_ADC ]:
             errmsg = 'Invalid board identifier {board}'.format(board=board)
-            raise EducubeConnectionError(errmsg)
+            raise EduCubeConnectionError(errmsg)
 
         logger.debug("Requesting telemetry from board {id}".format(id=board))
 
@@ -281,7 +277,7 @@ class EducubeConnection():
 
     def send_set_blinky(self):
         """
-        Light Educube up like a Christmas Tree!
+        Light EduCube up like a Christmas Tree!
         """
         cmd = 'C|CDH|BLINKY'
         self.send_command(cmd)
@@ -302,7 +298,7 @@ class EducubeConnection():
         if axis.upper() not in ('X', 'Y'):
             errmsg = ('Invalid axis input for magnetorquer: '
                       +'{axis} not in (\'X\', \'Y\')'.format(axis=axis))
-            raise EducubeConnectionError(errmsg)
+            raise EduCubeConnectionError(errmsg)
 
         if sign in (0, '0'):
             sign = '0'
@@ -313,7 +309,7 @@ class EducubeConnection():
         else:
             errmsg = ('Invalid input for {axis} magnetorquer: {sign}'\
                       .format(axis=axis.upper(), sign=sign)           )
-            raise EducubeConnectionError(errmsg)
+            raise EduCubeConnectionError(errmsg)
 
         cmd = 'C|ADC|MAG|{axis}|{sign}'.format(axis=axis.upper(),sign=sign)
         self.send_command(cmd)
@@ -331,7 +327,7 @@ class EducubeConnection():
         if val < -100 or val > 100:
             errmsg = ('Invalid input for reaction wheel {val} '
                       +'(should be -100 <= val <= 100)'.format(val=val))
-            raise EducubeConnectionError(errmsg)
+            raise EduCubeConnectionError(errmsg)
 
         cmd = ('C|ADC|REACT|{sgn}|{mag}'\
                .format(sgn=('+' if val >= 0 else '-'),
@@ -353,12 +349,12 @@ class EducubeConnection():
         if panel not in (1,2):
             errmsg = ('Invalid input for thermal experiment: panel {panel} '
                       +'(panel must be in [1,2])'.format(panel=panel))
-            raise EducubeConnectionError(errmsg)
+            raise EduCubeConnectionError(errmsg)
 
         if val < 0 or val > 100:
             errmsg = ('Invalid input for thermal experiment val {val} '
                       +'(val should be between 0 and 100)'.format(val=val))
-            raise EducubeConnectionError(errmsg)
+            raise EduCubeConnectionError(errmsg)
 
         cmd = 'C|EXP|HEAT|{panel}|{val}'.format(panel=panel, val=val)
         self.send_command(cmd)
@@ -400,10 +396,10 @@ class EducubeConnection():
 
 ##############################################################################
 
-class FakeEducubeConnection(EducubeConnection):
+class FakeEduCubeConnection(EduCubeConnection):
 
     def setup_connections(self):
-        logger.info("Setting up FAKE Educube connections")
+        logger.info("Setting up FAKE EduCube connections")
 
         self.output_file = open(self.output_path, 'a')
         fd, filename = tempfile.mkstemp()
@@ -411,7 +407,7 @@ class FakeEducubeConnection(EducubeConnection):
         logger.debug("Using fake serial connection to: %s" % filename)
 
     def teardown_connections(self):
-        logger.info("Tearing down FAKE Educube connections")
+        logger.info("Tearing down FAKE EduCube connections")
 
     def send_request_telem(self):
         logger.info("Fake connection: ignoring telem request")
@@ -422,13 +418,13 @@ class FakeEducubeConnection(EducubeConnection):
 def get_connection(connection_params):
     logger.info("Creating educube connection")
     if connection_params['fake']:
-        educube_connection = FakeEducubeConnection(
+        educube_connection = FakeEduCubeConnection(
             connection_params['port'],
             connection_params['board'],
             baud=connection_params['baud']
         )
     else:
-        educube_connection = EducubeConnection(
+        educube_connection = EduCubeConnection(
             connection_params['port'],
             connection_params['board'],
             baud=connection_params['baud'],
