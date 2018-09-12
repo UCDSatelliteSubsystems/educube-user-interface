@@ -45,12 +45,6 @@ class EduCubeConnectionThread(Thread):
         while self.master.running:
             # check whether there is any telemetry to pick up
             if self.master.connection.in_waiting:
-#                _buffer = self.master.connection.readline()
-#                telem = (millis(), bytes(_buffer))
-#                self.master.telemetry_buffer.append(telem)
-#                logger.debug("Received telemetry: {time} : {data}"\
-#                             .format(time=telem[0],data=telem[1])  )
-
                 _buffer.extend(self.master.connection.read())
                 if _buffer.endswith(self.eol):
                     if is_telemetry(_buffer):
