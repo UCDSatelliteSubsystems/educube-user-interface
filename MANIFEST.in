@@ -1,2 +1,0 @@
-recursive-include educube/web/static *
-recursive-include educube/web/templates *

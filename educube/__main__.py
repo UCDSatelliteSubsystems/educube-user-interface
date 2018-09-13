@@ -1,13 +1,10 @@
-from educube._cli import main
+from educube._cli import main as cli_main
 
 import logging
 logger = logging.getLogger(__name__)
 
-#print(logger)
-#root = logging.getLogger()
-#print('These are the attached loggers')
-#for key, val in root.manager.loggerDict.items():
-#    print(key, val)
+def main():
+    cli_main()
 
-
-main()
+if __name__=="__main__":
+    main()

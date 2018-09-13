@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='educube',
-      version='0.5.9',
+      version='0.6.0',
       download_url='https://github.com/ezeakeal/educube_client/tarball/0.5.9',
       keywords=['educube'],
       description='EduCube Client',
@@ -17,19 +17,16 @@ setup(name='educube',
       include_package_data = True,
       install_requires=[
         'click',
-        'markdown',
-        'pygments',
         'pyserial',
-        'requests',
-        'tabulate',
         'tornado',
       ],
       tests_require=[
         'nose',
       ],
+      python_requires=">=3.4",
       entry_points={
         'console_scripts': [
-          'educube = educube.client:main',
+          'educube = educube.__main__:main',
         ],
       },
       dependency_links=[
