@@ -1,4 +1,5 @@
 import serial
+import click
 
 import logging
 logger = logging.getLogger(__name__)
