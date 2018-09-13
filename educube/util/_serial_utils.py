@@ -19,12 +19,22 @@ def verify_serial_connection(port, baud):
 
 def suggest_serial():
     ports = serial.tools.list_ports.comports()
-    suggested_educube_port = ports[-1]
+
+    try:
+        suggested_educube_port = ports[-1]
+    except IndexError:
+        return 'No serial port suggestion available'
+
     return suggested_educube_port.device
+
 
 def suggest_baud():
     ports = serial.tools.list_ports.comports()
-    suggested_educube_port = ports[-1]
+    try: 
+        suggested_educube_port = ports[-1]
+    except:
+        return 'No bard rate suggestion available'
+
     if suggested_educube_port.description in ('BASE', 'Base Station'):
         return 9600
     else:
