@@ -26,6 +26,10 @@ class Telemetry(namedtuple('Telemetry', TELEMETRY_FIELDS)):
     Extends namedtuple to simplify conversion to JSON. 
 
     """
+    def _asdict(self):
+        """Hack to work around bug when inheriting from namedtuple in 3.4."""
+        return dict(zip(self._fields, self))
+
     def _serialised(self, remove_null=False):
         """Convert all namedtuple attributes to dictionaries."""
         if remove_null:
@@ -57,7 +61,7 @@ def parse_educube_telemetry(timestamp, telemetry_str):
 
     """
 
-    logger.info("Parsing telemetry")
+    logger.info("Parsing telemetry:\n{t}".format(t=telemetry_str))
     _telem_parts = telemetry_str.strip().split("|")
 
     if len(_telem_parts) < 3:
@@ -90,6 +94,7 @@ def parse_educube_telemetry(timestamp, telemetry_str):
                     board = _telem_board               ,
                     telem = "|".join(_chip_telem_parts),
                     data  = _parsed_telemetry           )
+    logger.debug('Parsed telemetry:\n{t}'.format(t=repr(out)))
     return out
 
 
