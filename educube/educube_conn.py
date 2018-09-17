@@ -32,6 +32,7 @@ class EduCubeConnectionThread(Thread):
         master : EduCubeConnection
             The controlling interface to the EduCube 
         eol : bytes
+            Byte character sequence denoting end-of-line
 
         """
         self.master = master
@@ -39,7 +40,7 @@ class EduCubeConnectionThread(Thread):
         Thread.__init__(self)
 
     def run(self): 
-        """. """
+        """Thread loop to listen for messages from EduCube."""
         _buffer = bytearray()
 
         while self.master.running:
