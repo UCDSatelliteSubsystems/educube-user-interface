@@ -154,6 +154,13 @@ def handle_command(educube, board, cmd, settings):
     elif board == 'EXP' and cmd =='HEAT':
         educube.send_set_thermal_panel(**settings)
 
+    elif board == 'EPS' and cmd =='PWR_ON':
+        educube.send_set_chip_power_on(**settings)
+
+    elif board == 'EPS' and cmd =='PWR_OFF':
+        educube.send_set_chip_power_off(**settings)
+
+
 # should this be moved to become a method of EduCubeServerSocket??? Both
 # educube and sockets could then be provided as attributes. 
 # the parser should be moved into EduCube

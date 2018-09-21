@@ -351,6 +351,32 @@ class EduCubeConnection():
         cmd = 'C|EXP|HEAT|{panel}|{val}'.format(panel=panel, val=val)
         self.send_command(cmd)
 
+    def send_set_chip_power_on(self, command_id):
+        """
+        Send command to turn on chip
+
+        Parameters
+        ----------
+        command_id : 
+            
+
+        """
+        cmd = 'C|EPS|PWR_ON|{command_id}'.format(command_id=command_id)
+        self.send_command(cmd)
+
+    def send_set_chip_power_off(self, command_id):
+        """
+        Send command to turn off chip
+
+        Parameters
+        ----------
+        command_id : 
+
+
+        """
+        cmd = 'C|EPS|PWR_OFF|{command_id}'.format(command_id=command_id)
+        self.send_command(cmd)
+
 
     ################
     # methods to return telemetry

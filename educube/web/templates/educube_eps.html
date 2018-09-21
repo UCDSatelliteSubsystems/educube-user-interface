@@ -100,11 +100,13 @@
             </td>
             <td>
             {{!if command_id}}
-              <button data-board="EPS" data-cmd="PWR_ON|${command_id}" 
+              <button data-board="EPS" data-cmd="PWR_ON" 
+                  data-settings='{"command_id":"${command_id}"}' 
                   class="educube_action btn btn-xs btn-success">
                 ON
               </button>
-              <button data-board="EPS" data-cmd="PWR_OFF|${command_id}" 
+              <button data-board="EPS" data-cmd="PWR_OFF" 
+                  data-settings='{"command_id":"${command_id}"}' 
                   class="educube_action btn btn-xs btn-danger">
                 OFF
               </button>
