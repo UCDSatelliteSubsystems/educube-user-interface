@@ -228,11 +228,12 @@ class EduCubeConnection():
             errmsg = "Encountered Error while sending command", 
             logger.exception(errmsg, exc_info=True)
 
-        cmd_string = self.telem_log_format\
+        _cmd_string = self.telem_log_format\
             .format(timestamp=millis(),
                     telemetry="COMMAND_SENT: {cmd}".format(cmd=cmd_structure))
         try:
-            self.output_file.write(cmd_string)
+            self.output_file.write(_cmd_string)
+            print(_cmd_string)
         except:
             errmsg = "Encountered Error while logging sent command to file"
             logger.exception(errmsg, exc_info=True)
@@ -394,9 +395,12 @@ class EduCubeConnection():
     def _write_telemetry_to_file(self, telemetry_buffer):
         """."""
         for _timestamp, _telemetry_bytes in telemetry_buffer:
-            self.output_file.write(self.telem_log_format.format(
+            _telemetry_str = self.telem_log_format.format(
                 timestamp = _timestamp                              ,
-                telemetry = _telemetry_bytes.decode('utf-8').strip() ))
+                telemetry = _telemetry_bytes.decode('utf-8').strip() )
+            self.output_file.write(_telemetry_str)
+            print(_telemetry_str) # THIS IS A TEMPORARY MEASURE TO ALLOW
+                                  # IMMEDIATE VIEWING.
 
     # WHAT ABOUT UNCAUGHT PARSING ERRORS???
     def parse_telemetry(self):
