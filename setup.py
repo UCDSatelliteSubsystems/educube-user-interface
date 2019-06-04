@@ -1,11 +1,13 @@
 from setuptools import setup, find_packages
 
+VERSION = '0.6.2dev'
+
 def readme():
     with open('README.rst') as f:
         return f.read()
 
 setup(name='educube',
-      version='0.6.1',
+      version=VERSION,
       download_url='https://github.com/ezeakeal/educube_client/tarball/0.5.9',
       keywords=['educube'],
       description='EduCube Client',
