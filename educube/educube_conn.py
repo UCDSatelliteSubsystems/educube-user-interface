@@ -37,7 +37,8 @@ class EduCubeConnectionThread(Thread):
         """
         self.master = master
         self.eol = eol
-        Thread.__init__(self)
+
+        super().__init__(self)
 
     def run(self): 
         """Thread loop to listen for messages from EduCube."""
@@ -47,24 +48,11 @@ class EduCubeConnectionThread(Thread):
             # check whether there is any telemetry to pick up
             if self.master.connection.in_waiting:
                 _buffer.extend(self.master.connection.read())
+                # the line terminator can be a multi-character sequence. Check
+                # the current buffer against this termination sequence, and
+                # process the buffer if line is complete
                 if _buffer.endswith(self.eol):
-                    if is_telemetry(_buffer):
-                        telem = (millis(), bytes(_buffer))
-                        self.master.telemetry_buffer.append(telem)
-                        logger.debug("Received telemetry: {time} : {data}"\
-                                     .format(time=telem[0],data=telem[1])  )
-                    elif is_debug(_buffer):
-                        logmsg = ("Received {board} DEBUG message:\n"
-                                  "        ==> {buffer}"
-                                  ).format(board=self.master.board_id,
-                                           buffer=_buffer)
-                        logger.debug(logmsg)
-                    else:
-                        logmsg = ("Received unrecognised message\n"
-                                  "        ==> {buffer}"
-                                  ).format(buffer=_buffer)
-                        logger.warning(logmsg)
-
+                    self._process_message(bytes(buffer))
                     _buffer = bytearray()
 
             # check whether it is time to ask for more telemetry
@@ -74,11 +62,37 @@ class EduCubeConnectionThread(Thread):
 
         logger.info("EduCubeConnectionThread.run has ended")
 
-def is_telemetry(buffer):
-    return buffer.lstrip().startswith(b'T|')
+    def _process_message(self, msg):
+        """Logs all received complete messages, and stores telemetry."""
+        if is_telemetry(msg):
+            time = millis()
+            telem = (time, msg)
 
-def is_debug(buffer):
-    return buffer.lstrip().startswith(b'DEBUG|')
+            self.master.telemetry_buffer.append(telem)
+            logger.debug("Received telemetry: {time} : {data}"\
+                         .format(time=time,data=msg)           )
+
+        elif is_debug(msg):
+            logmsg = ("Received {board} DEBUG message:\n"
+                      "        ==> {msg}"
+                      ).format(board=self.master.board_id,
+                               msg=msg)
+            logger.debug(logmsg)
+
+        else:
+            logmsg = ("Received unrecognised message\n"
+                      "        ==> {msg}"
+                      ).format(msg=msg)
+            logger.warning(logmsg)
+        
+
+def is_telemetry(msg):
+    return msg.lstrip().startswith(b'T|')
+
+def is_debug(msg):
+    return msg.lstrip().startswith(b'DEBUG|')
+
+
 
 class EduCubeConnection():
     """
@@ -385,9 +399,11 @@ class EduCubeConnection():
 
     def read_telemetry_buffer(self):
         """."""
+
         with self.lock:   # is this lock needed???
-            raw_telemetry = copy.deepcopy(self.telemetry_buffer)
+            raw_telemetry = self.telemetry_buffer[:]
             self.telemetry_buffer = []
+
         self._write_telemetry_to_file(raw_telemetry)
         return raw_telemetry
 
@@ -397,7 +413,9 @@ class EduCubeConnection():
         for _timestamp, _telemetry_bytes in telemetry_buffer:
             _telemetry_str = self.telem_log_format.format(
                 timestamp = _timestamp                              ,
-                telemetry = _telemetry_bytes.decode('utf-8').strip() )
+                telemetry = _telemetry_bytes.decode('utf-8').strip() 
+            )
+
             self.output_file.write(_telemetry_str)
             print(_telemetry_str) # THIS IS A TEMPORARY MEASURE TO ALLOW
                                   # IMMEDIATE VIEWING.
