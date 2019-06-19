@@ -34,7 +34,7 @@ def suggest_baud():
     try: 
         suggested_educube_port = ports[-1]
     except:
-        return 'No bard rate suggestion available'
+        return 'No baudrate suggestion available'
 
     if suggested_educube_port.description in ('BASE', 'Base Station'):
         return 9600

@@ -4,7 +4,6 @@ educube.py
 
 """
 import os
-import copy
 import time
 import serial
 import tempfile
@@ -38,7 +37,7 @@ class EduCubeConnectionThread(Thread):
         self.master = master
         self.eol = eol
 
-        super().__init__(self)
+        super().__init__()
 
     def run(self): 
         """Thread loop to listen for messages from EduCube."""
@@ -52,7 +51,7 @@ class EduCubeConnectionThread(Thread):
                 # the current buffer against this termination sequence, and
                 # process the buffer if line is complete
                 if _buffer.endswith(self.eol):
-                    self._process_message(bytes(buffer))
+                    self._process_message(bytes(_buffer))
                     _buffer = bytearray()
 
             # check whether it is time to ask for more telemetry
