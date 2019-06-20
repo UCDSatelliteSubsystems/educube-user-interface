@@ -62,38 +62,34 @@
           </div>
           <div class="panel-body" style="background-color: #111; color: #EEE;">
             <div class="col-sm-2">
-                <h1>${THERM_PWR.P1} %</h1>
+                <h1>${panel1.therm_pwr} %</h1>
             </div>
             <div class="col-sm-4">
-              {{!each INA}}
-                {{!if address=="64"}}
-                  <dl>
-                    <dt>Bus</dt><dd><span class="label label-primary">
-                      ${bus_V} V
-                    </span></dd>
-                    <dt>Current</dt><dd><span class="label label-primary">
-                      ${current_mA} mA
-                    </span></dd>
-                    <dt>Power</dt><dd><span class="label label-primary">
-                      ${power_mW} mW
-                    </span></dd>
-                  </dl>
-                {{!/if}}
-              {{!/each}}
+              <dl>
+                <dt>Bus</dt><dd><span class="label label-primary">
+                  ${panel1.ina.bus_V} V
+                </span></dd>
+                <dt>Current</dt><dd><span class="label label-primary">
+                  ${panel1.ina.current_mA} mA
+                </span></dd>
+                <dt>Power</dt><dd><span class="label label-primary">
+                  ${panel1.ina.power_mW} mW
+                </span></dd>
+              </dl>
             </div>
             <div class="col-sm-4">
               <dl>
                 <dt>TempA</dt>
                 <dd><span class="label label-primary">
-                  ${PANEL_TEMP.P1.A} C
+                  ${panel1.temperature.A} C
                 </span></dd>
                 <dt>TempB</dt>
                 <dd><span class="label label-primary">
-                  ${PANEL_TEMP.P1.B} C
+                  ${panel1.temperature.B} C
                 </span></dd>
                 <dt>TempC</dt>
                 <dd><span class="label label-primary">
-                  ${PANEL_TEMP.P1.C} C
+                  ${panel1.temperature.C} C
                 </span></dd>
               </dl>
             </div>
@@ -107,42 +103,38 @@
           </div>
           <div class="panel-body" style="background-color: #EEE; color: #111;">
             <div class="col-sm-2">
-              <h1>${THERM_PWR.P2} %</h1>
+              <h1>${panel2.therm_pwr} %</h1>
             </div>
             <div class="col-sm-4">
-              {{!each INA}}
-                {{!if address=="67"}}
-                  <dl>
-                    <dt>Bus</dt>
-                    <dd><span class="label label-primary">
-                      ${bus_V} V
-                    </span>
-                    </dd>
-                    <dt>Current</dt>
-                    <dd><span class="label label-primary">
-                      ${current_mA}mA
-                    </span></dd>
-                    <dt>Power</dt>
-                    <dd><span class="label label-primary">
-                      ${power_mW} mW
-                    </span></dd>
-                  </dl>
-                {{!/if}}
-              {{!/each}}
+              <dl>
+                <dt>Bus</dt>
+                <dd><span class="label label-primary">
+                  ${panel2.ina.bus_V} V
+                </span>
+                </dd>
+                <dt>Current</dt>
+                <dd><span class="label label-primary">
+                  ${panel2.ina.current_mA}mA
+                </span></dd>
+                <dt>Power</dt>
+                <dd><span class="label label-primary">
+                  ${panel2.ina.power_mW} mW
+                </span></dd>
+              </dl>
             </div>
             <div class="col-sm-4">
               <dl>
                 <dt>TempA</dt>
                 <dd><span class="label label-primary">
-                  ${PANEL_TEMP.P2.A} C
+                  ${panel2.temperature.A} C
                 </span></dd>
                 <dt>TempB</dt>
                 <dd><span class="label label-primary">
-                  ${PANEL_TEMP.P2.B} C
+                  ${panel2.temperature.B} C
                 </span></dd>
                 <dt>TempC</dt>
                 <dd><span class="label label-primary">
-                  ${PANEL_TEMP.P2.C} C
+                  ${panel2.temperature.C} C
                 </span></dd>
               </dl>
             </div>
