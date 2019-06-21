@@ -1,15 +1,16 @@
 #!/usr/bin/env python
+import logging
+
 import click
 import serial
-import pkg_resources
 import serial.tools.list_ports
 
+from educube import __version__
 from educube.web import server as webserver
 from educube import educube_conn as educonn
 from educube.util import (configure_logging, verify_serial_connection, 
                           suggest_serial, suggest_baud) 
 
-import logging
 logger = logging.getLogger(__name__)
 
 ##############################
@@ -27,7 +28,7 @@ def cli(ctx, verbose):
 @cli.command()
 def version():
     """Prints the EduCube client version"""
-    print(pkg_resources.require("educube")[0].version)
+    print("EduCube client version: {v}".format(v=__version__))
 
 @cli.command()
 @click.option('-s', '--serial', default=suggest_serial, prompt=True)
