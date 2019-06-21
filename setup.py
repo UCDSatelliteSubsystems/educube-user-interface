@@ -1,3 +1,5 @@
+import os
+
 from setuptools import setup, find_packages
 
 
@@ -13,7 +15,7 @@ ENTRY_POINTS = {'console_scripts': ('educube = educube.__main__:main', )}
 
 def version():
     _namespace = {}
-    with open(os.path.join()) as f:
+    with open(os.path.join(NAME, '__version__.py')) as f:
         exec(f.read(), _namespace)
 
     return _namespace['__version__']
