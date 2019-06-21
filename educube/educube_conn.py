@@ -103,16 +103,14 @@ class EduCubeConnection():
     syntax_command = 'C'
     syntax_sep = '|'
 
-    board_id_EPS = 'EPS'
-    board_id_CDH = 'CDH'
-    board_id_EXP = 'EXP'
-    board_id_ADC = 'ADC'
+    board_ids = ('EPS', 'CDH', 'EXP', 'ADC')
 
     telem_request_command = 'T'
 
     last_telem_request = 0
-    telemetry_buffer = []
     telem_log_format = "{timestamp}\t{telemetry}\n"
+
+    telemetry_buffer = []
 
     _conn_type = 'data'    # this is almost unnecessary -- it is only included
                            # so that, in principle, fake connections can
@@ -126,26 +124,30 @@ class EduCubeConnection():
         Parameters
         ----------
         portname : str
-            
+            The serial port that EduCube is connected to.
         board : str
-            
+            The EduCube board 
         baud : int
-            
+            The baud rate for serial communications
+        timeout : int
+            The serial port timeout (in seconds)
         output_path : str
+            Filepath to be used to save telemetry and command logs
+        telem_request_interval_s : int 
+            Time in seconds between requests for telemetry updates 
+
 
         """
-
         self.portname = portname
         self.baud = baud
         self.serial_timeout = timeout
 
-        self.board_id = board
-
-
-        if board not in (self.board_id_EPS, self.board_id_CDH, 
-                         self.board_id_EXP, self.board_id_ADC ):
+        if board in self.board_ids:
+            self.board_id = board
+        else:
             errmsg = 'Invalid board identifier {board}'.format(board=board)
             raise EduCubeConnectionError(errmsg)
+
 
         # file to save telemetry
         if output_path:
