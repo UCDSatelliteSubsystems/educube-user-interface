@@ -52,7 +52,7 @@ def parse_ina_telemetry(ina_chip_parts):
     # TODO: what if the ina_chip_parts is corrupted?
 
     # calculate the power:
-    _power_mA = '{:.2f}'.format(float(_bus_V) * float(_current_mA))
+    _power_mW = '{:.2f}'.format(float(_bus_V) * float(_current_mA))
 
     return INATelem(name           = EXP_INA_NAME[_address],
                     address        = _address              ,   
@@ -86,7 +86,7 @@ def _parse_exp_telem(telem):
             try:
                 _panel = EXP_INA_NAME[_chip_telem_parts[0]]
                 _chip_telem_id = 'I{panel}'.format(panel=_panel)
-            except KeyError, IndexError: # ignore corrupted _chip_telem_parts
+            except (KeyError, IndexError): # ignore corrupted _chip_telem_parts
                 continue
             
         _chip_telem[_chip_telem_id] = _chip_telem_parts 
@@ -103,17 +103,17 @@ def _parse_exp_telem(telem):
         # handle the panel power status
         try:
             therm_pwr, = _panel_telem['therm_']
-        except KeyError, ValueError: 
+        except (KeyError, ValueError): 
             # either THERM_{panel} is missing from the packet or it is missing
             # its value
             therm_pwr = None
 
         # handle the INA current sensor and the telemetry sensors
-        ina_telem         = parse_INA_telemetry(_panel_telem['I'])
+        ina_telem         = parse_ina_telemetry(_panel_telem['I'])
         temperature_telem = parse_temperature_telemetry(
-            _panel_telem['A'],
-            _panel_telem['B'],
-            _panel_telem['C'],
+            _panel_telem['A'][0],
+            _panel_telem['B'][0],
+            _panel_telem['C'][0],
             )
 
         # store as a complete EXPPanelTelemetry object
@@ -124,7 +124,8 @@ def _parse_exp_telem(telem):
             )
 
 
-    return EXPTelemetry(**panels)
+    return EXPTelemetry(panel1 = panels['P1'],
+                        panel2 = panels['P2'] )
 
 
 
