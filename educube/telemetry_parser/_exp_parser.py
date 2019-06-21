@@ -47,22 +47,25 @@ EXP_INA_NAME = {
 
 def parse_ina_telemetry(ina_chip_parts):
 
-    _address = ina_chip_parts[0]
+    # ina_chip_parts is a list 
+    _address, _shunt_V, _bus_V, _current_mA = ina_chip_parts
+    # TODO: what if the ina_chip_parts is corrupted?
 
+    # calculate the power:
+    _power_mA = '{:.2f}'.format(float(_bus_V) * float(_current_mA))
 
-    return INATelem(name           = EXP_INA_NAME[ina_parts[0]],
-                    address        = ina_chip_parts[0]         ,   
-                    shunt_V        = ina_chip_parts[1]         ,
-                    bus_V          = ina_chip_parts[2]         ,
-                    current_mA     = ina_chip_parts[3]         ,
-                    power_mW       = '{:.2f}'.format(          
-                                        float(ina_parts[2]) * 
-                                        float(ina_parts[3])  ) ,
-                    switch_enabled = None                      ,
-                    command_id     = None                       )
+    return INATelem(name           = EXP_INA_NAME[_address],
+                    address        = _address              ,   
+                    shunt_V        = _shunt_V              ,
+                    bus_V          = _bus_V                ,
+                    current_mA     = _current_mA           ,
+                    power_mW       = _power_mW             ,
+                    switch_enabled = None                  ,
+                    command_id     = None                   )
            
 
-def parse_temperature_telemetry():
+def parse_temperature_telemetry(sensorA, sensorB, sensorC):
+    return EXPTemperatureTelemetry(sensorA, sensorB, sensorC)
 
 
 
@@ -107,7 +110,11 @@ def _parse_exp_telem(telem):
 
         # handle the INA current sensor and the telemetry sensors
         ina_telem         = parse_INA_telemetry(_panel_telem['I'])
-        temperature_telem = parse_temperature_telemetry()
+        temperature_telem = parse_temperature_telemetry(
+            _panel_telem['A'],
+            _panel_telem['B'],
+            _panel_telem['C'],
+            )
 
         # store as a complete EXPPanelTelemetry object
         panels[panel] = EXPPanelTelemetry(
