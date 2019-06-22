@@ -1,20 +1,23 @@
 """
-educube.py
+_connection.py
 
+Provides interface between the browser app and EduCube via USB serial. 
 
 """
-import os
-import time
-import serial
-import tempfile
-from threading import Thread, Lock
-from math import fabs
-
 import logging
-logger = logging.getLogger(__name__)
+import os
+import tempfile
+import time
+
+from math import fabs
+from threading import Thread, Lock
+
+import serial
 
 from educube.util import millis
 from educube.telemetry_parser import parse_educube_telemetry
+
+logger = logging.getLogger(__name__)
 
 class EduCubeConnectionError(Exception):
     """Exception to be raised for errors when communicating with EduCube."""
@@ -215,6 +218,34 @@ class EduCubeConnection():
         self.running = False
         self.thread.join()
 
+    # ******************************
+    # Telemetry & command callbacks
+    # ******************************
+    # ultimately, the arguments here should probably be changed to something
+    # more flexible.  We would then be able to send user input from the UI to
+    # do things like change playback rate???
+    def process_command(self, board=None, command=None, settings=None):
+        """."""
+        if command == 'T':
+            self.send_request_telem(board=board)
+    
+        elif board == 'ADC' and command == 'MAG':
+            self.send_set_magtorquer(**settings)
+    
+        elif board == 'ADC' and command == 'REACT':
+            self.send_set_reaction_wheel(**settings)
+    
+        elif board == 'EXP' and command =='HEAT':
+            self.send_set_thermal_panel(**settings)
+    
+        elif board == 'EPS' and command =='PWR_ON':
+            self.send_set_chip_power_on(**settings)
+    
+        elif board == 'EPS' and command =='PWR_OFF':
+            self.send_set_chip_power_off(**settings)
+
+
+
     ################
     # basic commands
     ################
@@ -270,8 +301,7 @@ class EduCubeConnection():
         if board is None:
             board = self.board_id
 
-        if board not in [self.board_id_EPS, self.board_id_CDH,
-                         self.board_id_EXP, self.board_id_ADC ]:
+        if board not in self.board_ids:
             errmsg = 'Invalid board identifier {board}'.format(board=board)
             raise EduCubeConnectionError(errmsg)
 
@@ -456,19 +486,19 @@ class FakeEduCubeConnection(EduCubeConnection):
 
 ##############################################################################
 
-def get_connection(connection_params):
-    logger.info("Creating educube connection")
-    if connection_params['fake']:
-        educube_connection = FakeEduCubeConnection(
-            connection_params['port'],
-            connection_params['board'],
-            baud=connection_params['baud']
-        )
-    else:
-        educube_connection = EduCubeConnection(
-            connection_params['port'],
-            connection_params['board'],
-            baud=connection_params['baud'],
-        )
-    return educube_connection
+#def get_connection(connection_params):
+#    logger.info("Creating educube connection")
+#    if connection_params['fake']:
+#        educube_connection = FakeEduCubeConnection(
+#            connection_params['port'],
+#            connection_params['board'],
+#            baud=connection_params['baud']
+#        )
+#    else:
+#        educube_connection = EduCubeConnection(
+#            connection_params['port'],
+#            connection_params['board'],
+#            baud=connection_params['baud'],
+#        )
+#    return educube_connection
 

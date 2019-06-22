@@ -6,16 +6,16 @@ import serial
 import serial.tools.list_ports
 
 from educube import __version__
+from educube.connection import configure_connection
 from educube.web import server as webserver
-from educube import educube_conn as educonn
 from educube.util import (configure_logging, verify_serial_connection, 
                           suggest_serial, suggest_baud) 
 
 logger = logging.getLogger(__name__)
 
-##############################
+# ****************************************************************************
 # COMMAND LINE INTERFACE
-##############################
+# ****************************************************************************
 
 @click.group()
 @click.option('-v', '--verbose', count=True,
@@ -29,6 +29,8 @@ def cli(ctx, verbose):
 def version():
     """Prints the EduCube client version"""
     print("EduCube client version: {v}".format(v=__version__))
+
+
 
 @cli.command()
 @click.option('-s', '--serial', default=suggest_serial, prompt=True)
@@ -47,14 +49,15 @@ def start(serial, baud, board, fake, port=18888):
     if not fake:
         verify_serial_connection(serial, baud)
 
-    conn_params = {"type": "serial",
-                   "port": serial,  # NOTE: SERIAL PORT, NOT WEBSOCKET PORT!!!
-                   "baud": baud,
-                   "board": board,
-                   "fake": fake,
-                   }
+    connection_params = {
+        "type": "serial",
+        "port": serial,  # NOTE: SERIAL PORT, NOT WEBSOCKET PORT!!!
+        "baud": baud,
+        "board": board,
+        "fake": fake,
+        }
 
-    with educonn.get_connection(conn_params) as conn:
+    with configure_connection(**connection_params) as conn:
         edu_url = "http://localhost:{port}".format(port=port)
         click.secho("EduCube will be available at {url}".format(url=edu_url), 
                     fg='green')
