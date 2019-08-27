@@ -1,18 +1,16 @@
 // call this in the html using <script> set_port({{port}}) </script> to 
 // programatically set port? 
-//var PORT = 18888;
 //
 //function set_port(p){
 //    PORT = p
 //};
-
+//
 //var websocket_addr = "ws://localhost:"+PORT+"/socket";
-//var websocket_addr = "ws://localhost:18888/socket";
 // creates a new websocket handler
 // 
 // Note: if additional msgtypes are added, then this will have to be extended!
 // 
-//function setup_websocket(websocket_addr, telemetryhandler) {
+
 function setup_websocket(websocket_address, telemetryhandler) {
     console.log("websocket_address : "+websocket_address);
     websocket = new WebSocket(websocket_address);
@@ -35,6 +33,10 @@ function setup_websocket(websocket_address, telemetryhandler) {
 
     function _on_close() {
         console.log("websocket: closed");
+	// alerts the user that EduCube is no longer connected.
+	// TODO: tidy up the web interface?
+        // TODO: replace system alert box with custom formatted box? 
+	alert("The websocket connection was closed by the server");
     };
 
     websocket.onmessage = _message_handler;

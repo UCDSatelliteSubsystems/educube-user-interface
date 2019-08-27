@@ -33,7 +33,7 @@ dirname = os.path.dirname(__file__)
 STATIC_PATH = os.path.join(dirname, 'static')
 TEMPLATE_PATH = os.path.join(dirname, 'templates')
 
-DEFAULT_PORT = 18888
+#DEFAULT_PORT = 18888
 
 # ****************************************************************************
 # Main Tornado Application
@@ -41,7 +41,8 @@ DEFAULT_PORT = 18888
 class EduCubeWebApplication(tornado.web.Application):
     def __init__(self, educube_connection, port):
         handlers = [
-            (r"/", MainHandler),
+            (r"/", MainHandler,
+             {'websocket_port' : port}),
             (r"/socket", EduCubeServerSocket, 
              {'educube_connection' : educube_connection}),
         ]
@@ -59,8 +60,16 @@ class EduCubeWebApplication(tornado.web.Application):
 # Request Handlers
 # ****************************************************************************
 class MainHandler(tornado.web.RequestHandler):
+    """."""
+    def initialize(self, websocket_port):
+        self.websocket_port = websocket_port
+#    def __init__(self, websocket_port, **kwargs):
+#        self.websocket_port = websocket_port
+#        super().__init__(**kwargs)
+
     def get(self):
-        self.render("educube.html", port=DEFAULT_PORT)
+        self.render("educube.html", 
+                    port=self.websocket_port)
 
 
 class EduCubeServerSocket(tornado.websocket.WebSocketHandler):

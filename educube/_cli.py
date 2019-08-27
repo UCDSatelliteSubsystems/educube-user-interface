@@ -13,6 +13,8 @@ from educube.util import (configure_logging, verify_serial_connection,
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_PORT = 18888
+
 # ****************************************************************************
 # COMMAND LINE INTERFACE
 # ****************************************************************************
@@ -36,15 +38,17 @@ def version():
 @click.option('-s', '--serial', default=suggest_serial, prompt=True)
 @click.option('-b', '--baud', default=suggest_baud, prompt=True)
 @click.option('-e', '--board', default='CDH')
+@click.option('-p', '--port', default=DEFAULT_PORT)
 @click.option('--fake', is_flag=True, default=False, help="Fake the serial")
-def start(serial, baud, board, fake, port=18888):
+def start(serial, baud, board, fake, port):
     """Starts the EduCube web interface""" 
 
     logger.info("""Running EduCube connection with settings:
         Serial: {serial}
         Baudrate: {baud}
         EduCube board: {board}
-    """.format(serial=serial, baud=baud, board=board))
+        Websocket Port : {port}
+    """.format(serial=serial, baud=baud, board=board, port=port))
 
     if not fake:
         verify_serial_connection(serial, baud)
