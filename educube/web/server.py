@@ -79,7 +79,7 @@ class EduCubeServerSocket(tornado.websocket.WebSocketHandler):
 
         # Startup periodic calls -- callback_time in milliseconds
         self.loop = tornado.ioloop.PeriodicCallback(
-            callback = self.get_updated_telemetry,
+            callback = self.put_updated_telemetry,
             callback_time = 500
             )
         self.loop.start()
@@ -134,15 +134,16 @@ class EduCubeServerSocket(tornado.websocket.WebSocketHandler):
             logger.warning('Unknown msgtype: {}'.format(msg['msgtype']))
 
 
-    def get_updated_telemetry(self):
+    def put_updated_telemetry(self):
         _telemetry_packets = self.educube.parse_telemetry()
 
         # when an error is encountered in parsing the data,
         # educube.parse_telemetry() returns None. This then causes another
-        # error when turning to JSON, so we need to filter out None.
+        # error when turning to JSON, so first we need to filter out None.
         _telemetry_packets = (t for t in _telemetry_packets if t is not None)
 
         for _telemetry in _telemetry_packets:
+            # convert telemetry to JSON
             try: 
                 _telemetry_json = json.dumps({
                     'msgtype'    : 'telemetry'             , 
@@ -155,6 +156,7 @@ class EduCubeServerSocket(tornado.websocket.WebSocketHandler):
                 logger.exception(errmsg, exc_info=True)
                 continue
 
+            # send telemetry over websocket
             try:
                 logger.debug("Updating telemetry: {}"\
                              .format(_telemetry_json))
