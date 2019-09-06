@@ -62,15 +62,21 @@ def start(serial, baud, board, fake, port):
         }
 
     with configure_connection(**connection_params) as conn:
+        telemetry_path = conn.output_path
         edu_url = "http://localhost:{port}".format(port=port)
+
         click.secho("EduCube will be available at {url}".format(url=edu_url), 
                     fg='green')
         click.secho("Your telemetry will be stored at '{path}'"\
-                    .format(path=conn.output_path), fg='green')
+                    .format(path=telemetry_path), fg='green')
         click.prompt("Press any key to continue",
                      default=True, show_default=False)
 
         webserver.run(conn, port)
+
+    click.secho("EduCube Connection Closed.", fg='green')
+    click.secho("Telemetry is saved to '{path}'"\
+                .format(path=telemetry_path), fg='green')
 
 
 ##############################
