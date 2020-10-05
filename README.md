@@ -19,7 +19,7 @@ environment.
 
 To install the client:
 ```
-pip install git+https://github/com/UCDSatelliteSubsystems/educube-user-interface
+pip install git+https://github.com/UCDSatelliteSubsystems/educube-user-interface
 ```
 
 To test the client, open a command prompt and type:
