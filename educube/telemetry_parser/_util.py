@@ -1,4 +1,4 @@
-from collections import Iterable, Mapping
+from collections.abc import Iterable, Mapping
 
 # function to allow us to convert namedtuple data hierarchy into JSON-able
 # form (i.e., into tuples, dictionaries, primitives)
@@ -11,17 +11,25 @@ def serialise(obj):
     object should then be parseable as valid JSON.
 
     """
-    if isinstance(obj, Iterable) and hasattr(obj, '_asdict'):
-        _dict = dict()
-        items = obj._asdict()
-        for item in items:
-            if isinstance(items[item], Iterable):
-                _dict[item] = serialise(items[item])
-            else:
-                _dict[item] = items[item]        
-        return _dict
-    elif isinstance(obj, Iterable) and not isinstance(obj, str):
-        return tuple(serialise(item) for item in obj)
+    if isinstance(obj, Iterable):
+        # handle namedtuples
+        if hasattr(obj, '_asdict'):
+            _dict = dict()
+            items = obj._asdict()
+            for item in items:
+                if isinstance(items[item], Iterable):
+                    _dict[item] = serialise(items[item])
+                else:
+                    _dict[item] = items[item]        
+            return _dict
+
+        # handle strings
+        if not isinstance(obj, str):
+            return tuple(serialise(item) for item in obj)
+
+        # fall through case?
+        return obj
+
     else:
         return obj
 

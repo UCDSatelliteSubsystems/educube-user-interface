@@ -1,18 +1,30 @@
-import os
-
 from setuptools import setup, find_packages
+import os
 
 
 NAME             = 'educube'
 DESCRIPTION      = 'EduCube Client and User Interface'
-REQUIRES_PYTHON  = '>=3.4'
+REQUIRES_PYTHON  = '>=3.6'
 KEYWORDS         = ('educube', )
 LICENSE          = 'GPLv3'
-INSTALL_REQUIRES = ('click', 'pyserial', 'tornado')
 
-ENTRY_POINTS = {'console_scripts': ('educube = educube.__main__:main', )}
+INSTALL_REQUIRES = [
+    'pyserial', 'tornado',
+#    'click',
+]
 
+# ****************************************************************************
+# console scripts
+# ****************************************************************************
+CONSOLE_SCRIPTS = [
+    'educube = educube.__main__:main',
+]
 
+ENTRY_POINTS = {'console_scripts': CONSOLE_SCRIPTS}
+
+# ****************************************************************************
+# version information stored in __version__.py
+# ****************************************************************************
 def version():
     _namespace = {}
     with open(os.path.join(NAME, '__version__.py')) as f:
@@ -21,12 +33,17 @@ def version():
     return _namespace['__version__']
 
 
+# ****************************************************************************
+# long description from README.md
+# ****************************************************************************
 def readme():
     with open('README.md') as f:
         return f.read()
 
 
-
+# ****************************************************************************
+# run setup
+# ****************************************************************************
 setup(
     name                 = NAME,
     version              = version(),
