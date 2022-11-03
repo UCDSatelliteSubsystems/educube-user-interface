@@ -1,28 +1,66 @@
-from collections import namedtuple
+"""
+_exp_parser.py
 
-# new arrangement:
+Interface to parse parts of an EXP telemetry string.
+
+# The EXP Telemetry Format
+
+An EXP telemetry string looks like:
+
+```
+T|EXP|THERM_P1,0|THERM_P2,0|I,64,-0.09,0.00,-1.00|I,67,-0.08,0.00,-0.20|P1A,20.69|P1B,20.81|P1C,20.88|P2A,20.94|P2B,21.06|P2C,2
+```
+
+The telemetry parts consist of:
+
+- `THERM_P?`: the power status of the two thermal panels
+- `I`: telemetry from the INA boards for the two panels
+- `P??`: temperature data from the 3 sensors on the 2 thermal panels
+
+
+# Notes
+
+- As with all telemetry packets, there is no check that the packet is received
+  as it was transmitted.
+
+- This is particularly bad here because the EduCube SPI protocol doesn't allow
+  enough time for the EXP telemetry to by passed from the board to the
+  CDH. This means that the telemetry data from panel 2 is routinely corrupted
+  *unless it is directly accessed from the serial port on the EXP board*. This
+  parser attempts to catch this bug and return an otherwise valid packet with
+  None for those values that have been truncated. You are likely to get some
+  odd temperature values that creep through though.
+
+  The only way to fix this is in firmware. 
+
+"""
+
+# new arrangement: (June 2019)
 # 
 # instead of grouping by functionality, we want to group by panel. So, our
 # telemetry will consist of two panels, and each panel will contain attributes
 # therm_pwr, ina (which will have sub-attributes for current &c.), and
 # temperature (with sub attributes A, B, C).
 
+# standard library imports
+from collections import namedtuple
 
-EXP_FIELDS = ('panel1', # solar black
-              'panel2', # solar white
-              )
+
+EXP_FIELDS = (
+    'panel1', # solar black
+    'panel2', # solar white
+)
+
 EXPTelemetry = namedtuple('EXPTelemetry', EXP_FIELDS)
 
-EXPPanelTelemetry = namedtuple('ThermalPanel', 
-                               ('therm_pwr', 'ina', 'temperature'))
-EXPTemperatureTelemetry = namedtuple('TemperatureSensor', ('A', 'B', 'C'))
+EXPPanelTelemetry = namedtuple(
+    'EXPThermalTelemetry', ('therm_pwr', 'ina', 'temperature')
+)
 
+EXPTemperatureTelemetry = namedtuple(
+    'EXPTemperatureTelemetry', ('A', 'B', 'C')
+)
 
-#EXP_FIELDS = ('THERM_PWR'  , #
-#              'INA'        , #
-#              'PANEL_TEMP' , #
-#              )
-#EXPTelemetry = namedtuple('EXPTelemetry', EXP_FIELDS)
 
 # structures of subfields:
 
@@ -35,10 +73,8 @@ EXPTemperatureTelemetry = namedtuple('TemperatureSensor', ('A', 'B', 'C'))
 INATelem  = namedtuple('INATelem', ('name', 'address', 'shunt_V',
                                     'bus_V', 'current_mA', 'power_mW',
                                     'switch_enabled', 'command_id'    ))
-#Panels = namedtuple('Panels', ('P1', 'P2'))
-#Panel  = namedtuple('Panel' , ('A', 'B', 'C'))
 
-# lookup tables
+# lookup tables for INA panels
 EXP_INA_NAME = {
     '64' : 'P1',
     '67' : 'P2',
@@ -46,7 +82,8 @@ EXP_INA_NAME = {
 
 
 def parse_ina_telemetry(ina_chip_parts):
-
+    """Read INA telemetry as provided by EXP board."""
+    
     # ina_chip_parts is a list 
     _address, _shunt_V, _bus_V, _current_mA = ina_chip_parts
     # TODO: what if the ina_chip_parts is corrupted?
@@ -54,14 +91,16 @@ def parse_ina_telemetry(ina_chip_parts):
     # calculate the power:
     _power_mW = '{:.2f}'.format(float(_bus_V) * float(_current_mA))
 
-    return INATelem(name           = EXP_INA_NAME[_address],
-                    address        = _address              ,   
-                    shunt_V        = _shunt_V              ,
-                    bus_V          = _bus_V                ,
-                    current_mA     = _current_mA           ,
-                    power_mW       = _power_mW             ,
-                    switch_enabled = None                  ,
-                    command_id     = None                   )
+    return INATelem(
+        name           = EXP_INA_NAME[_address],
+        address        = _address              ,   
+        shunt_V        = _shunt_V              ,
+        bus_V          = _bus_V                ,
+        current_mA     = _current_mA           ,
+        power_mW       = _power_mW             ,
+        switch_enabled = None                  ,
+        command_id     = None
+    )
            
 
 def parse_temperature_telemetry(sensorA, sensorB, sensorC):
@@ -70,7 +109,7 @@ def parse_temperature_telemetry(sensorA, sensorB, sensorC):
 
 
 def _parse_exp_telem(telem):
-    """."""
+    """Parser function for telemetry from EXP board."""
 
     # convert the received telemetry to a dictionary with the chip identifiers
     # as keys. The INA chips have to be handled as special cases -- they don't
@@ -85,7 +124,7 @@ def _parse_exp_telem(telem):
         if _chip_telem_id == 'I':
             try:
                 _panel = EXP_INA_NAME[_chip_telem_parts[0]]
-                _chip_telem_id = 'I{panel}'.format(panel=_panel)
+                _chip_telem_id = f'I{_panel}'
             except (KeyError, IndexError): # ignore corrupted _chip_telem_parts
                 continue
             
@@ -97,8 +136,10 @@ def _parse_exp_telem(telem):
     for panel in ('P1', 'P2'):
         # extract the telemetry for panel into a new dict. The keys are made
         # generic by removing the panel identifier from the key
-        _panel_telem = {key.replace(panel, '') : _chip_telem[key]
-                        for key in _chip_telem if panel in key}   
+        _panel_telem = {
+            key.replace(panel, '') : _chip_telem[key]
+            for key in _chip_telem if panel in key
+        }   
 
         # handle the panel power status
         try:
@@ -108,12 +149,12 @@ def _parse_exp_telem(telem):
             # its value
             therm_pwr = None
 
-        # handle the INA current sensor and the telemetry sensors
+        # handle the INA current sensor and the temperature sensors
         ina_telem         = parse_ina_telemetry(_panel_telem['I'])
         temperature_telem = parse_temperature_telemetry(
-            _panel_telem['A'][0],
-            _panel_telem['B'][0],
-            _panel_telem['C'][0],
+            _panel_telem.get('A', (None,) )[0],
+            _panel_telem.get('B', (None,) )[0],
+            _panel_telem.get('C', (None,) )[0],
             )
 
         # store as a complete EXPPanelTelemetry object
@@ -124,8 +165,10 @@ def _parse_exp_telem(telem):
             )
 
 
-    return EXPTelemetry(panel1 = panels['P1'],
-                        panel2 = panels['P2'] )
+    return EXPTelemetry(
+        panel1 = panels['P1'],
+        panel2 = panels['P2']
+    )
 
 
 
