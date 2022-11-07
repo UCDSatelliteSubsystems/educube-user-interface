@@ -4,13 +4,13 @@ import os
 
 NAME             = 'educube'
 DESCRIPTION      = 'EduCube Client and User Interface'
-REQUIRES_PYTHON  = '>=3.6'
+REQUIRES_PYTHON  = '>=3.7'
 KEYWORDS         = ('educube', )
 LICENSE          = 'GPLv3'
 
 INSTALL_REQUIRES = [
     'pyserial', 'tornado',
-#    'click',
+    'click',
 ]
 
 # ****************************************************************************
