@@ -44,7 +44,7 @@ class Telemetry(namedtuple('Telemetry', TELEMETRY_FIELDS)):
         #TODO: can this be removed now (we no longer support 3.4?)
         return dict(zip(self._fields, self))
 
-    def _serialise(self, remove_null=False):
+    def _serialised(self, remove_null=False):
         """Convert all namedtuple attributes to dictionaries."""
         _serialised = serialise(self)
         
