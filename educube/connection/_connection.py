@@ -4,16 +4,19 @@ _connection.py
 Provides interface between the browser app and EduCube via USB serial. 
 
 """
+# standard library imports
 import logging
 import os
 import tempfile
 import time
 
-from math import fabs
+#from math import fabs
 from threading import Thread, Lock
 
+# third party imports
 import serial
 
+# local imports
 from educube.util import millis
 from educube.telemetry_parser import parse_educube_telemetry
 
@@ -71,8 +74,7 @@ class EduCubeConnectionThread(Thread):
             telem = (time, msg)
 
             self.master.telemetry_buffer.append(telem)
-            logger.debug("Received telemetry: {time} : {data}"\
-                         .format(time=time,data=msg)           )
+            logger.debug(f"Received telemetry: {time} : {msg}")
 
         elif is_debug(msg):
             logmsg = ("Received {board} DEBUG message:\n"
@@ -139,7 +141,6 @@ class EduCubeConnection():
         telem_request_interval_s : int 
             Time in seconds between requests for telemetry updates 
 
-
         """
         self.portname = portname
         self.baud = baud
@@ -148,7 +149,7 @@ class EduCubeConnection():
         if board in self.board_ids:
             self.board_id = board
         else:
-            errmsg = 'Invalid board identifier {board}'.format(board=board)
+            errmsg = f'Invalid board identifier {board}'
             raise EduCubeConnectionError(errmsg)
 
 
@@ -185,22 +186,23 @@ class EduCubeConnection():
         logger.info("STARTUP : Setting up EduCube connections")
 
         self.output_file = open(self.output_path, 'a')
-        logger.info("STARTUP : Telemetry will be saved to {path}"\
-                    .format(path=self.output_path)                )
+        logger.info(f"STARTUP : Telemetry will be saved to {self.output_path}")
 
-        self.connection = serial.Serial(self.portname, self.baud, 
-                                        timeout=self.serial_timeout)
-        logger.info("STARTUP : Opened Serial connection: {ser}"\
-                    .format(ser=repr(self.connection))   )
+        self.connection = serial.Serial(
+            self.portname, self.baud, timeout=self.serial_timeout
+        )
+        logger.info(f"STARTUP : Opened Serial connection: {self.connection!r}")
 
     def teardown_connections(self):
         logger.info("SHUTDOWN : Closing EduCube connections")
 
         self.connection.close()
         logger.info("SHUTDOWN : Closed Serial connection")
+
         self.output_file.close()
-        logger.info("SHUTDOWN : Closed telemetry save file {path}"\
-                    .format(path=self.output_path))
+        logger.info(
+            f"SHUTDOWN : Closed telemetry save file {self.output_path}"
+        )
 
     ################
     # thread management
@@ -227,22 +229,25 @@ class EduCubeConnection():
     def process_command(self, board=None, command=None, settings=None):
         """."""
         if command == 'T':
-            self.send_request_telem(board=board)
+            return self.send_request_telem(board=board)
     
-        elif board == 'ADC' and command == 'MAG':
-            self.send_set_magtorquer(**settings)
+        if board == 'ADC':
+            if command == 'MAG':
+                return self.send_set_magtorquer(**settings)
+
+            if command == 'REACT':
+                return self.send_set_reaction_wheel(**settings)
+
+        if board == 'EXP':
+            if command =='HEAT':
+                return self.send_set_thermal_panel(**settings)
     
-        elif board == 'ADC' and command == 'REACT':
-            self.send_set_reaction_wheel(**settings)
+        if board == 'EPS':
+            if command =='PWR_ON':
+                return self.send_set_chip_power_on(**settings)
     
-        elif board == 'EXP' and command =='HEAT':
-            self.send_set_thermal_panel(**settings)
-    
-        elif board == 'EPS' and command =='PWR_ON':
-            self.send_set_chip_power_on(**settings)
-    
-        elif board == 'EPS' and command =='PWR_OFF':
-            self.send_set_chip_power_off(**settings)
+            if command =='PWR_OFF':
+                return self.send_set_chip_power_off(**settings)
 
 
 
@@ -302,12 +307,12 @@ class EduCubeConnection():
             board = self.board_id
 
         if board not in self.board_ids:
-            errmsg = 'Invalid board identifier {board}'.format(board=board)
+            errmsg = f'Invalid board identifier {board}'
             raise EduCubeConnectionError(errmsg)
 
-        logger.debug("Requesting telemetry from board {id}".format(id=board))
+        logger.debug(f"Requesting telemetry from board {board}")
 
-        cmd = 'C|{board}|T'.format(board=board)
+        cmd = f'C|{board}|T'
         self.send_command(cmd)
 
         # update last_telem_request time
@@ -334,8 +339,10 @@ class EduCubeConnection():
 
         """
         if axis.upper() not in ('X', 'Y'):
-            errmsg = ('Invalid axis input for magnetorquer: '
-                      +'{axis} not in (\'X\', \'Y\')'.format(axis=axis))
+            errmsg = (
+                'Invalid axis input for magnetorquer: '
+                f'{axis} not in (\'X\', \'Y\')'
+            )
             raise EduCubeConnectionError(errmsg)
 
         if sign in (0, '0'):
@@ -363,13 +370,13 @@ class EduCubeConnection():
 
         """
         if val < -100 or val > 100:
-            errmsg = ('Invalid input for reaction wheel {val} '
-                      +'(should be -100 <= val <= 100)'.format(val=val))
+            errmsg = f'Invalid value {val} for reaction wheel'
             raise EduCubeConnectionError(errmsg)
 
-        cmd = ('C|ADC|REACT|{sgn}|{mag}'\
-               .format(sgn=('+' if val >= 0 else '-'),
-                       mag=int(fabs(val))             ))
+        _sgn = '+' if val >= 0 else '-'
+        _mag = int(abs(val))
+
+        cmd = f'C|ADC|REACT|{_sgn}|{_mag}'
         self.send_command(cmd)
 
     def send_set_thermal_panel(self, panel, val):
@@ -385,16 +392,20 @@ class EduCubeConnection():
 
         """
         if panel not in (1,2):
-            errmsg = ('Invalid input for thermal experiment: panel {panel} '
-                      +'(panel must be in [1,2])'.format(panel=panel))
+            errmsg = (
+                f'Invalid input for thermal experiment: panel {panel} '
+                +'(panel must be in [1,2])'
+            )
             raise EduCubeConnectionError(errmsg)
 
         if val < 0 or val > 100:
-            errmsg = ('Invalid input for thermal experiment val {val} '
-                      +'(val should be between 0 and 100)'.format(val=val))
+            errmsg = (
+                f'Invalid input for thermal experiment val {val} '
+                +'(val should be between 0 and 100)'
+            )
             raise EduCubeConnectionError(errmsg)
 
-        cmd = 'C|EXP|HEAT|{panel}|{val}'.format(panel=panel, val=val)
+        cmd = f'C|EXP|HEAT|{panel}|{val}'
         self.send_command(cmd)
 
     def send_set_chip_power_on(self, command_id):
@@ -407,7 +418,7 @@ class EduCubeConnection():
             
 
         """
-        cmd = 'C|EPS|PWR_ON|{command_id}'.format(command_id=command_id)
+        cmd = f'C|EPS|PWR_ON|{command_id}'
         self.send_command(cmd)
 
     def send_set_chip_power_off(self, command_id):
@@ -420,7 +431,7 @@ class EduCubeConnection():
 
 
         """
-        cmd = 'C|EPS|PWR_OFF|{command_id}'.format(command_id=command_id)
+        cmd = f'C|EPS|PWR_OFF|{command_id}'
         self.send_command(cmd)
 
 
@@ -457,9 +468,12 @@ class EduCubeConnection():
         _raw_telemetry = self.read_telemetry_buffer()
 
         parsed_telemetry = [
-            parse_educube_telemetry(_timestamp                      , 
-                                    _telemetry_bytes.decode('utf-8') ) 
-            for _timestamp, _telemetry_bytes in _raw_telemetry        ]
+            parse_educube_telemetry(
+                _timestamp                      ,
+                _telemetry_bytes.decode('utf-8')
+            )
+            for _timestamp, _telemetry_bytes in _raw_telemetry
+        ]
  
         return parsed_telemetry
 
@@ -475,7 +489,7 @@ class FakeEduCubeConnection(EduCubeConnection):
         self.output_file = open(self.output_path, 'a')
         fd, filename = tempfile.mkstemp()
         self.connection = os.fdopen(fd, "w")
-        logger.debug("Using fake serial connection to: %s" % filename)
+        logger.debug(f"Using fake serial connection to: {filename}")
 
     def teardown_connections(self):
         logger.info("Tearing down FAKE EduCube connections")
