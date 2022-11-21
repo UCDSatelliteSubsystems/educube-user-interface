@@ -48,6 +48,36 @@ EPS_INA_COMMAND_ID = {
     '75' : '3',
     }
 
+def parse_switch_status(*parts):
+    """Switch status for switchable boards."""
+    return {k : int(p) for k, p in zip(('R', '1', '2', '3'), parts)}
+
+def parse_ina_telemetry(ina_parts, switch_status):
+    """."""
+    _addr, _voltage, _current = ina_parts
+
+    # calculate power
+    _power = '{:.2f}'.format(float(_voltage) * float(_current))
+
+    # board identifier
+    _id = EPS_INA_COMMAND_ID.get(_addr, None)
+
+    # switch status
+    _switch_enabled = switch_status.get(_id, 1)
+    
+    # assemble telemetry info
+    return INATelem(
+        name           = EPS_INA_NAME.get(_addr, None),
+        address        = _addr,
+        shunt_V        = None,
+        bus_V          = _voltage,
+        current_mA     = _current,
+        power_mW       = _power,
+        switch_enabled = _switch_enabled,
+        command_id     = _id
+    )
+
+
 def _parse_eps_telem(telem):
     """."""
     _chip_telem = dict()
@@ -59,22 +89,17 @@ def _parse_eps_telem(telem):
         else:
             _chip_telem[_chip_telem_id] = _chip_telem_parts
 
+    # get chip enabled data
+    _switch_status = parse_switch_status(*_chip_telem.pop('I_E'))
+            
     # handle EPS INA chips. 
-    ina_chips = (val 
-                 for key, val in _chip_telem.items() if key.startswith('I'))
-    # WHY IS switch_enabled = 1 HARD CODED???
+    _ina_chips = (
+        val for key, val in _chip_telem.items() if key.startswith('I')
+    )
     ina_telem = [
-        INATelem(name           = EPS_INA_NAME.get(ina_parts[0], None),
-                 address        = ina_parts[0]                              ,
-                 shunt_V        = None                                      ,
-                 bus_V          = ina_parts[1]                              ,
-                 current_mA     = ina_parts[2]                              ,
-                 power_mW       = '{:.2f}'.format(float(ina_parts[1]) *
-                                                  float(ina_parts[2])  )    ,
-                 switch_enabled = 1                                         ,
-                 command_id     = EPS_INA_COMMAND_ID.get(ina_parts[0], None),
-                 )
-        for ina_parts in ina_chips                                           ]
+        parse_ina_telemetry(_ina_parts, _switch_status)
+        for _ina_parts in _ina_chips
+    ]
 
     # 'temp', 'voltage', 'current'
     ds2438_telem = DS2438(*_chip_telem['DA'])
