@@ -13,11 +13,14 @@ interface.
 
 """
 
+# standard library imports
 import os
 import json
 import logging
 import webbrowser
+from time import time
 
+# tornado web framework
 import tornado.web
 import tornado.ioloop
 import tornado.httpserver
@@ -80,11 +83,15 @@ class EduCubeServerSocket(tornado.websocket.WebSocketHandler):
     _sockets = set()
 
     def __init__(self, application, request, educube_connection, **kwargs):
-        self.educube = educube_connection
+        self.connection = educube_connection
 
         tornado.websocket.WebSocketHandler.__init__(
             self, application, request, **kwargs
             )
+
+
+        # need to record update time to check for fresh telemetry
+        self._last_update = 0 #TODO: fix this hack!
 
         # Startup periodic calls -- callback_time in milliseconds
         self.loop = tornado.ioloop.PeriodicCallback(
@@ -132,7 +139,7 @@ class EduCubeServerSocket(tornado.websocket.WebSocketHandler):
         if msg['msgtype'] == 'command':
 
             try:
-                self.educube.process_command(**msg['msgcontent'])
+                self.connection.send_command(**msg['msgcontent'])
             except:
                 errmsg = ('Exception encountered while processing command '
                           +'with arguments:\n       {msg}'.format(msg=msg))
@@ -144,8 +151,13 @@ class EduCubeServerSocket(tornado.websocket.WebSocketHandler):
 
 
     def put_updated_telemetry(self):
-        _telemetry_packets = self.educube.parse_telemetry()
+        """Get fresh telemetry and post it over the websocket."""
 
+        #TODO: more reliable solution? 
+        _telemetry_packets = (
+            self.connection.educube.new_telemetry(self._last_update)
+        )
+        self._last_update = time()
         # when an error is encountered in parsing the data,
         # educube.parse_telemetry() returns None. This then causes another
         # error when turning to JSON, so first we need to filter out None.
@@ -259,11 +271,19 @@ def run(educube_connection, port):
     http_server = tornado.httpserver.HTTPServer(application)
     http_server.listen(port)
 
-    webbrowser.open_new("http://localhost:{port}".format(port=port))
+    _url = "http://localhost:{port}".format(port=port)
+    webbrowser.open_new(_url)
 
+    #TODO: context manager?
+    _ioloop = tornado.ioloop.IOLoop.instance()
     try:
-        tornado.ioloop.IOLoop.instance().start()
+        logger.info(f'Starting webserver at {_url}')
+        _ioloop.start()
     except KeyboardInterrupt:
-        tornado.ioloop.IOLoop.instance().stop()
-
+        pass
+    finally:
+        logger.info('KeyBoardInterrupt received: Stopping webserver')
+        _ioloop.stop()
+        logger.info('KeyBoardInterrupt received: Stopping webserver - DONE')
+        
 

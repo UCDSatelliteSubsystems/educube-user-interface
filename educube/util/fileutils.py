@@ -4,13 +4,25 @@ educube.utils.fileutils
 """
 
 # standard library imports
-from queue import Queue
+from queue import Queue, Empty
 
 # local imports
-from educube.utils.threadutils import ConsumerThread
+from educube.util.threadutils import ConsumerThread
 
 
 # ****************************************************************************
+
+def consume_all(q, func):
+    """Consumes all remaining items in a Queue."""
+
+    while True:
+        try:
+            item = q.get(block=False)
+        except Empty:
+            break
+        else:
+            func(item)
+
 
 class OutputFile:
     """Thread-safe file output."""
@@ -68,9 +80,10 @@ class OutputFile:
     def close(self):
         self._thread.stop()
 
-        # clear any remaining messages in the queue 
-        for _msg in self._queue:
-            self._write_to_file(_msg)
+        # clear any remaining messages in the queue
+        consume_all(self._queue, self._write_to_file)
+#        for _msg in self._queue:
+#            self._write_to_file(_msg)
 
         return self._file.close()
 

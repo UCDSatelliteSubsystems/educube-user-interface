@@ -31,18 +31,22 @@ class ThreadPool:
     def __init__(self, threads, stop_event=None):
         """Initialiser."""
 
+        if stop_event is None:
+            stop_event = threading.Event()
+
+        self.stop_event = stop_event
+        self.threads = threads
+
         # set a common stop event for all threads
         for thread in threads:
-            thread.stop_event = stop_event
+            thread._stop_event = stop_event
 
-        self.threads = threads
-        self.stop_event = stop_event
 
     def __repr__(self):
         return f"ThreadPool({self.threads!r})"
         
     def __iter__(self):
-        return self.threads
+        return iter(self.threads)
 
     def __enter__(self):
         self.start()
@@ -60,7 +64,7 @@ class ThreadPool:
 
     def stop(self):
         """Stop all threads."""
-        self._stop_event.set()
+        self.stop_event.set()
 
         # wait for each thread to finish
         for thread in self:

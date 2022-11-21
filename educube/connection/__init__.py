@@ -2,7 +2,7 @@ from ._connection import EduCubeConnection
 #from ._fake_connection import FakeEduCubeConnection 
 
 
-def configure_connection(port, board, baud, fake=False, **kwargs):
+def configure_connection(port, board, baudrate, fake=False, **kwargs):
     """
     Creates the appropriate EduCube connection object.
 
@@ -16,7 +16,7 @@ def configure_connection(port, board, baud, fake=False, **kwargs):
 
     else:
         educube_connection = EduCubeConnection(
-            port, board, baud=baud,
+            port, board, baudrate=baudrate,
         )
 
     return educube_connection

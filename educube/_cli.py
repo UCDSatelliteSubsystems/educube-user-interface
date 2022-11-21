@@ -10,6 +10,7 @@ from educube.connection import configure_connection
 from educube.web import server as webserver
 from educube.util import (configure_logging, verify_serial_connection, 
                           suggest_serial, suggest_baud) 
+from educube.util.contextutils import context
 
 logger = logging.getLogger(__name__)
 
@@ -36,44 +37,44 @@ def version():
 
 @cli.command()
 @click.option('-s', '--serial', default=suggest_serial, prompt=True)
-@click.option('-b', '--baud', default=suggest_baud, prompt=True)
+@click.option('-b', '--baudrate', default=suggest_baud, prompt=True)
 @click.option('-e', '--board', default='CDH')
 @click.option('-p', '--port', default=DEFAULT_PORT)
 @click.option('--fake', is_flag=True, default=False, help="Fake the serial")
-def start(serial, baud, board, fake, port):
+def start(serial, baudrate, board, fake, port):
     """Starts the EduCube web interface""" 
 
     logger.info("""Running EduCube connection with settings:
         Serial: {serial}
-        Baudrate: {baud}
+        Baudrate: {baudrate}
         EduCube board: {board}
         Websocket Port : {port}
-    """.format(serial=serial, baud=baud, board=board, port=port))
+    """.format(serial=serial, baudrate=baudrate, board=board, port=port))
 
     if not fake:
-        verify_serial_connection(serial, baud)
+        verify_serial_connection(serial, baudrate)
 
     connection_params = {
-        "type": "serial",
-        "port": serial,  # NOTE: SERIAL PORT, NOT WEBSOCKET PORT!!!
-        "baud": baud,
-        "board": board,
-        "fake": fake,
+        "type"     : "serial",
+        "port"     : serial,  # NOTE: SERIAL PORT, NOT WEBSOCKET PORT!!!
+        "baudrate" : baudrate,
+        "board"    : board,
+        "fake"     : fake,
         }
 
-    with configure_connection(**connection_params) as conn:
-        telemetry_path = conn.output_path
-        edu_url = "http://localhost:{port}".format(port=port)
+    # create (don't start) the connection
+    conn = configure_connection(**connection_params)
 
-        click.secho("EduCube will be available at {url}".format(url=edu_url), 
-                    fg='green')
-        click.secho("Your telemetry will be stored at '{path}'"\
-                    .format(path=telemetry_path), fg='green')
-        click.prompt("Press any key to continue",
-                     default=True, show_default=False)
-
+    telemetry_path = conn.output_filepath
+    educube_url = f"http://localhost:{port}"
+    
+    click.secho(f"EduCube available at {educube_url}", fg='green')
+    click.secho(f"Telemetry stored at {telemetry_path}", fg='green')
+    click.prompt("Press any key to continue", default=True, show_default=False)
+    
+    with context(conn.start, conn.shutdown):
         webserver.run(conn, port)
-
+            
     click.secho("EduCube Connection Closed.", fg='green')
     click.secho("Telemetry is saved to '{path}'"\
                 .format(path=telemetry_path), fg='green')
