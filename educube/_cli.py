@@ -1,20 +1,30 @@
-#!/usr/bin/env python
+"""
+educube._cli
+
+Command Line Interface to run the EduCube User Interface
+"""
+
+# standard library imports
 import logging
 
+# third party imports
 import click
 import serial
-import serial.tools.list_ports
 
+# local imports
 from educube import __version__
 from educube.connection import configure_connection
 from educube.web import server as webserver
-from educube.util import (configure_logging, verify_serial_connection, 
-                          suggest_serial, suggest_baud) 
+from educube.util import configure_logging
+from educube.util import verify_serial_connection 
+from educube.util import suggest_serial, suggest_baud 
 from educube.util.contextutils import context
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_PORT = 18888
+DEFAULT_BOARD = 'CDH'
+DEFAULT_TELEMETRY_INTERVAL_S = 5
 
 # ****************************************************************************
 # COMMAND LINE INTERFACE
@@ -33,18 +43,17 @@ def version():
     """Prints the EduCube client version"""
     print("EduCube client version: {v}".format(v=__version__))
 
-
-
 @cli.command()
 @click.option('-s', '--serial', default=suggest_serial, prompt=True)
 @click.option('-b', '--baudrate', default=suggest_baud, prompt=True)
-@click.option('-e', '--board', default='CDH')
+@click.option('-e', '--board', default=DEFAULT_BOARD)
 @click.option('-p', '--port', default=DEFAULT_PORT)
+@click.option('--telemetry-interval', default=DEFAULT_TELEMETRY_INTERVAL_S)
 @click.option('--fake', is_flag=True, default=False, help="Fake the serial")
-def start(serial, baudrate, board, fake, port):
+def start(serial, baudrate, board, fake, port, telemetry_interval):
     """Starts the EduCube web interface""" 
 
-    logger.info("""Running EduCube connection with settings:
+    logger.info("""Running EduCube User Interface with settings:
         Serial: {serial}
         Baudrate: {baudrate}
         EduCube board: {board}
@@ -55,12 +64,13 @@ def start(serial, baudrate, board, fake, port):
         verify_serial_connection(serial, baudrate)
 
     connection_params = {
-        "type"     : "serial",
+#        "type"     : "serial",
         "port"     : serial,  # NOTE: SERIAL PORT, NOT WEBSOCKET PORT!!!
         "baudrate" : baudrate,
         "board"    : board,
         "fake"     : fake,
-        }
+        "telemetry_request_interval_s" : telemetry_interval,
+    }
 
     # create (don't start) the connection
     conn = configure_connection(**connection_params)
@@ -76,8 +86,7 @@ def start(serial, baudrate, board, fake, port):
         webserver.run(conn, port)
             
     click.secho("EduCube Connection Closed.", fg='green')
-    click.secho("Telemetry is saved to '{path}'"\
-                .format(path=telemetry_path), fg='green')
+    click.secho(f"Telemetry is saved to '{telemetry_path}'", fg='green')
 
 
 ##############################

@@ -1,13 +1,14 @@
 from collections import namedtuple
 from datetime import datetime as dt
 
-CDH_FIELDS = ('GPS_DATE'      , #
-              'GPS_FIX'       , #
-              'GPS_FIX_DEGMIN', #
-              'GPS_META'      , #
-              'SEPARATION'    , #
-              'HOT_PLUG'      , #
-              )
+CDH_FIELDS = (
+    'GPS_DATE'      , #
+    'GPS_FIX'       , #
+    'GPS_FIX_DEGMIN', #
+    'GPS_META'      , #
+    'SEPARATION'    , #
+    'HOT_PLUG'      , #
+)
 
 CDHTelemetry = namedtuple('CDHTelemetry', CDH_FIELDS)
 
@@ -55,36 +56,47 @@ def _parse_cdh_telem(telem):
         gps_date = None
 
     # should this be recast to a fixed precision string???
-    gps_fix        = GPSFix(LAT = float(gps_telem_parts[1])/1e7,
-                            LON = float(gps_telem_parts[2])/1e7 )
+    gps_fix = GPSFix(
+        LAT = float(gps_telem_parts[1])/1e7,
+        LON = float(gps_telem_parts[2])/1e7
+    )
     # Why doesn't this convert to degrees and minutes???
-    gps_fix_degmin = GPSFix(LAT = float(gps_telem_parts[1])/1e7,
-                            LON = float(gps_telem_parts[2])/1e7 )
+    gps_fix_degmin = GPSFix(
+        LAT = float(gps_telem_parts[1])/1e7,
+        LON = float(gps_telem_parts[2])/1e7
+    )
     # extract the gps status -- if status unknown, return 'No Fix'
     gps_status_int = gps_telem_parts[5]
     gps_status = GPS_STATUS.get(gps_status_int, 'No Fix')
     # assemble GPS meta data
-    gps_meta       = GPSMeta(HDOP       = gps_telem_parts[3],
-                             ALT_CM     = gps_telem_parts[4],
-                             STATUS_INT = gps_status_int    ,
-                             STATUS     = gps_status         ) 
+    gps_meta = GPSMeta(
+        HDOP       = gps_telem_parts[3],
+        ALT_CM     = gps_telem_parts[4],
+        STATUS_INT = gps_status_int    ,
+        STATUS     = gps_status
+    ) 
 
     # parse sep_telem
     _, sep_status_id, *board_hotplug_statuses = sep_telem.split(',')
 
-    separation = SepStatus(ID  = sep_status_id                   , 
-                           VAL = SEPARATION_STATUS[sep_status_id] )
+    separation = SepStatus(
+        ID  = sep_status_id, 
+        VAL = SEPARATION_STATUS[sep_status_id],
+    )
 
-    hotplug    = HotPlug(ADC   = board_hotplug_statuses[0],
-                         COMM  = board_hotplug_statuses[1],
-                         EXP1  = board_hotplug_statuses[2],
-                         SPARE = board_hotplug_statuses[3] )
+    hotplug = HotPlug(
+        ADC   = board_hotplug_statuses[0],
+        COMM  = board_hotplug_statuses[1],
+        EXP1  = board_hotplug_statuses[2],
+        SPARE = board_hotplug_statuses[3]
+    )
 
-    out = CDHTelemetry(GPS_DATE       = gps_date      ,
-                       GPS_FIX        = gps_fix       ,
-                       GPS_FIX_DEGMIN = gps_fix_degmin,
-                       GPS_META       = gps_meta      ,
-                       SEPARATION     = separation    ,
-                       HOT_PLUG       = hotplug        )
-    return out
+    return CDHTelemetry(
+        GPS_DATE       = gps_date      ,
+        GPS_FIX        = gps_fix       ,
+        GPS_FIX_DEGMIN = gps_fix_degmin,
+        GPS_META       = gps_meta      ,
+        SEPARATION     = separation    ,
+        HOT_PLUG       = hotplug
+    )
 

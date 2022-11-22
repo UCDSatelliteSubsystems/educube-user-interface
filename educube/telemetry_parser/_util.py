@@ -3,8 +3,7 @@ from collections.abc import Iterable, Mapping
 # function to allow us to convert namedtuple data hierarchy into JSON-able
 # form (i.e., into tuples, dictionaries, primitives)
 def serialise(obj):
-    """\
-    Convert a hierarchy of namedtuples into primitives and dicts.
+    """Convert a hierarchy of namedtuples into primitives and dicts.
 
     This function recursively traverses a hierarchy of iterables, looking for
     namedtuple objects and converting them into dictionaries. The resulting
@@ -34,9 +33,7 @@ def serialise(obj):
         return obj
 
 def remove_value_none(d):
-    """\
-    Recursively traverse Mapping (eg. dict) to remove keys with value None.
-    """
+    """Recursively traverse Mapping to remove keys with value None."""
     _dict = dict()
     for key in d:
         val = d[key]

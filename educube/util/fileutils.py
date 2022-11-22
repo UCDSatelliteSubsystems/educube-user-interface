@@ -12,6 +12,13 @@ from educube.util.threadutils import ConsumerThread
 
 # ****************************************************************************
 
+def writeline(stream, line, newline='\n'):
+    """Write a line to a (text) stream."""
+    return stream.write(line+newline)
+
+
+# ****************************************************************************
+
 def consume_all(q, func):
     """Consumes all remaining items in a Queue."""
 
@@ -82,8 +89,6 @@ class OutputFile:
 
         # clear any remaining messages in the queue
         consume_all(self._queue, self._write_to_file)
-#        for _msg in self._queue:
-#            self._write_to_file(_msg)
 
         return self._file.close()
 

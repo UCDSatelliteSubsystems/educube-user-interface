@@ -36,7 +36,6 @@ The telemetry parts consist of:
 """
 
 # new arrangement: (June 2019)
-# 
 # instead of grouping by functionality, we want to group by panel. So, our
 # telemetry will consist of two panels, and each panel will contain attributes
 # therm_pwr, ina (which will have sub-attributes for current &c.), and
@@ -70,16 +69,24 @@ EXPTemperatureTelemetry = namedtuple(
 # of arguments, and it is supplied with None values as appropriate on the
 # EPS/EXP boards. These can later be stripped out. It might make more sense to
 # implement two separate classes EPSINATelem and EXPINATelem.
-INATelem  = namedtuple('INATelem', ('name', 'address', 'shunt_V',
-                                    'bus_V', 'current_mA', 'power_mW',
-                                    'switch_enabled', 'command_id'    ))
+INA_FIELDS = (
+    'name',
+    'address',
+    'shunt_V',
+    'bus_V',
+    'current_mA',
+    'power_mW',
+    'switch_enabled',
+    'command_id'
+)
+
+INATelem  = namedtuple('INATelem', INA_FIELDS)
 
 # lookup tables for INA panels
 EXP_INA_NAME = {
     '64' : 'P1',
     '67' : 'P2',
 }
-
 
 def parse_ina_telemetry(ina_chip_parts):
     """Read INA telemetry as provided by EXP board."""
@@ -88,7 +95,7 @@ def parse_ina_telemetry(ina_chip_parts):
     _address, _shunt_V, _bus_V, _current_mA = ina_chip_parts
     # TODO: what if the ina_chip_parts is corrupted?
 
-    # calculate the power:
+    # calculate the power
     _power_mW = '{:.2f}'.format(float(_bus_V) * float(_current_mA))
 
     return INATelem(
@@ -103,10 +110,8 @@ def parse_ina_telemetry(ina_chip_parts):
     )
            
 
-def parse_temperature_telemetry(sensorA, sensorB, sensorC):
-    return EXPTemperatureTelemetry(sensorA, sensorB, sensorC)
-
-
+def parse_temperature_telemetry(a, b, c):
+    return EXPTemperatureTelemetry(a, b, c)
 
 def _parse_exp_telem(telem):
     """Parser function for telemetry from EXP board."""
@@ -155,60 +160,16 @@ def _parse_exp_telem(telem):
             _panel_telem.get('A', (None,) )[0],
             _panel_telem.get('B', (None,) )[0],
             _panel_telem.get('C', (None,) )[0],
-            )
-
+        )
+        
         # store as a complete EXPPanelTelemetry object
         panels[panel] = EXPPanelTelemetry(
             therm_pwr   = therm_pwr,
             ina         = ina_telem,
             temperature = temperature_telem
-            )
-
+        )
 
     return EXPTelemetry(
         panel1 = panels['P1'],
         panel2 = panels['P2']
     )
-
-
-
-
-#    therm_pwr  = Panels(P1 = _chip_telem.get('THERM_P1', [None])[0],
-#                        P2 = _chip_telem.get('THERM_P2', [None])[0] )
-#
-#    # this feels dangerous -- what if something else starts with I???
-#    ina_chips = (val 
-#                 for key, val in _chip_telem.items() if key.startswith('I'))
-#    # exp ina format has shunt_V , but no switch_enabled???
-#    ina_telem = [INATelem(name           = EXP_INA_NAME[ina_parts[0]]     ,
-#                          address        = ina_parts[0]                   ,   
-#                          shunt_V        = ina_parts[1]                   ,
-#                          bus_V          = ina_parts[2]                   ,
-#                          current_mA     = ina_parts[3]                   ,
-#                          power_mW       = '{:.2f}'.format(              
-#                                              float(ina_parts[2]) * 
-#                                              float(ina_parts[3])  )      ,
-#                          switch_enabled = None                           ,
-#                          command_id     = None                            )
-#                 for ina_parts in ina_chips                                 ]
-#
-#    # panel temperatures. NOTE: there is a bug in the way this telemetry is
-#    # formed, meaning that the panel temperatures may be truncated. This
-#    # exception is caught and None returned
-#    panels = list()
-#    for n in (1, 2):
-#        panel = list()
-#        for p in ('A', 'B', 'C'):
-#            try:
-#                key = 'P{n}{p}'.format(n=n, p=p)
-#                panel.append(_chip_telem[key][0])
-#            except:
-#                panel.append(None)
-#
-#        panels.append(Panel(*panel))
-#    panel_temp = Panels(*panels)
-#
-#    out = EXPTelemetry(THERM_PWR  = therm_pwr ,
-#                       INA        = ina_telem ,
-#                       PANEL_TEMP = panel_temp )
-#    return out

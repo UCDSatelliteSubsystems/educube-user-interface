@@ -1,22 +1,31 @@
 """
 educube.educube
+(c) University College, Dublin 
+
+The main interface for parsing commands to and telemetry from EduCube.
+
+This provides a class EduCube, with methods:
+* EduCube.command - assembles and formats a command
+* EduCube.update_telemetry - updates telemetry for a board
+* EduCube.latest_telemetry - returns latest telemetry for all boards
+* EduCube.new_telemetry - only returns telemetry updated since cutoff 
 
 """
-
-# standard library imports
-#import logging
 
 # local imports
 from educube.telemetry_parser import parse_educube_telemetry
 
-#TODO: does this actually need to do any logging at all?
-#logger = logging.getLogger(__name__)
+def format_command(cmd):
+    """Return a formatted EduCube command string."""
+    return f'[{cmd}]'
+
+# ****************************************************************************
 
 class EduCubeCommandError(Exception):
     """Custom Exception for bad command arguments."""
 
 class EduCube:
-    """Software EduCube representation."""
+    """EduCube software representation."""
 
     def __init__(self):
         """Initialiser."""
@@ -29,7 +38,27 @@ class EduCube:
 
     # the core interface for assembling commands
     def command(self, board, cmd, settings):
-        """Convert command arguments into an EduCube command."""
+        """Convert command arguments into an EduCube command.
+
+        Parameters:
+        -----------
+        board : str
+            the board (subsystem) to which the command will be sent
+        cmd : str
+            the command string
+        settings : mapping
+            any arguments needed by the command
+
+        Returns:
+        --------
+        Formatted command string
+        
+        """
+        _command = self._assemble_command(board, cmd, settings)
+        return format_command(_command)
+
+    def _assemble_command(self, board, cmd, settings):
+        """Assemble EduCube command."""
         if cmd == 'T':
             return self.request_telemetry(board=board)
 
@@ -54,7 +83,6 @@ class EduCube:
         # we shouldn't have made it this far...
         _errmsg = f"Unknown command parameters {board=}, {cmd=}, {settings=}"
         raise EduCubeCommandError(_errmsg)
-
             
     # the core interface for updating and accessing telemetry
     def update_telemetry(self, telemetry_str, timestamp):
@@ -68,7 +96,7 @@ class EduCube:
             return
 
         # update the stored telemetry for the appropriate board
-        #TODO: is Lock needed here? (threadsafe access to shared dictionary)
+        #TODO: is Lock needed? (for threadsafe access to a shared dictionary) 
         self._board_telemetry[_telemetry.board] = _telemetry
         return _telemetry
         

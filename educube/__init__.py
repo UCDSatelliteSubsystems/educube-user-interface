@@ -1,6 +1,20 @@
-# __all__ = []
+"""
+educube
+University College Dublin
+2016 -
+
+A Python client & user interface for EduCube, the 1U CubeSat simulator. 
+
+"""
 
 from .__version__ import __version__
 
-from . import telemetry_parser
-from .connection import EduCubeConnection, configure_connection
+# the EduCube command and telemetry parsers
+from .educube import EduCube
+
+# the serial connection
+from .connection import EduCubeConnection
+from .connection import configure_connection
+
+# the web server
+#from .web import EduCubeWebApplication

@@ -5,41 +5,33 @@ Provides interface between the browser app and EduCube via USB serial.
 
 """
 # standard library imports
+import sys
 import logging
 import os
 import tempfile
-
 from queue import Queue
-#from math import fabs
-#from threading import Thread, Lock
 
 # third party imports
 import serial
 
 # local imports
+from educube.educube import EduCube
 from educube.util import millis
-#from educube.telemetry_parser import parse_educube_telemetry
 from educube.util.threadutils import SchedulerThread
 from educube.util.threadutils import ConsumerThread, ProducerConsumerThread
 from educube.util.threadutils import ThreadPool
-from educube.educube import EduCube
 from educube.util.fileutils import OutputFile
-
+from educube.util.fileutils import writeline
 
 # create module-level global logger object
 logger = logging.getLogger(__name__)
 
-
+# miscellaneous helper functions
 def is_telemetry(msg):
     return msg.lstrip().startswith(b'T|')
 
 def is_debug(msg):
     return msg.lstrip().startswith(b'DEBUG|')
-
-#TODO: should this be done by EduCube.command?
-def format_command(cmd):
-    """Return a formatted EduCube command string."""
-    return f'[{cmd}]'
 
 def initialise_serial(portname, baudrate, timeout):
     """Helper function to initialise a new (closed) serial port."""
@@ -51,23 +43,21 @@ def initialise_serial(portname, baudrate, timeout):
     port.timeout = timeout
     return port
 
-
-def send_request_telemetry(conn, educube, board='CDH'):
+def send_request_telemetry(connection, educube, board='CDH'):
     """Assemble and send a request telemetry command."""
-#    _cmd = educube.request_telemetry(board)
-    return conn.send_command(board, 'T', None)
-
+    return connection.send_command(board, 'T', None)
 
 # functions to handle printing to file and stdout
-def write_rx_message(msg, timestamp, file):
-    _msg = f"{timestamp}\t>>>\t{msg}"
-    print(_msg)
-    return file.writeline(_msg)
+def writeline_to_streams(streams, line):
+    return [writeline(stream, line) for stream in streams]
 
-def write_tx_message(msg, timestamp, file):
+def write_rx_message(streams, msg, timestamp):
+    _msg = f"{timestamp}\t>>>\t{msg}"
+    return writeline_to_streams(streams, _msg)
+
+def write_tx_message(streams, msg, timestamp):
     _msg = f"{timestamp}\t<<<\t{msg}"
-    print(_msg)
-    return file.writeline(_msg)
+    return writeline_to_streams(streams, _msg)
 
 
 class RXHandler:
@@ -157,7 +147,7 @@ class EduCubeConnection:
         # file to save telemetry
         if output_path is None:
             _type, _time = self._conn_type, millis()
-            _filename = f"educube_telemetry_{_type}_{_time}.raw"
+            _filename = f"educube_telemetry_{_type}_{_time}.dat"
             output_path = os.path.join( tempfile.gettempdir(), _filename )
 
         self.output_filepath = output_path
@@ -193,40 +183,57 @@ class EduCubeConnection:
             self._request_telemetry_thread,
         ])
 
+        # output streams
+        #TODO: make stdout optional?
+        self._streams = [
+            self.output_file,
+            sys.stdout
+        ]
         
     def _process_message(self, msg, encoding=None):
         """Logs all received complete messages, and stores telemetry."""
 
         _encoding = self._default_encoding if encoding is None else encoding 
 
-        _msgbytes = msg.strip(self._EOL)
+        # remove trailing newline characters
+        _msgbytes = msg.rstrip(self._EOL)
 
         if _msgbytes:
             if is_telemetry(msg):
-                # decode packet and add timestamp
-                timestamp = millis()
-                try:
-                    telemetry_str = msg.decode(encoding=_encoding).strip()
-                except:
-                    logger.exception(f"Error decoding: {msg!r}", exc_info=True)
-                else:
-                    # write the received telemetry to file and output stream
-                    write_rx_message(
-                        msg       = telemetry_str,
-                        timestamp = timestamp,
-                        file      = self.output_file,
-                    )
-                    
-                    # parse and store the received packet
-                    self.educube.update_telemetry(telemetry_str, timestamp)
-                    logger.debug(f"Received telemetry: {timestamp} : {msg}")
-            
+                self._process_telemetry_message(msg, _encoding)
+
             elif is_debug(msg):
                 logger.debug(f"Received DEBUG message: {msg!r}")
             
             else:
                 logger.warning(f"Received unrecognised message: {msg!r}")
+
+    def _process_telemetry_message(self, msg, encoding=None):
+        """Decode telemetry packet and add timestamp."""
+        # timestamp (milliseconds since epoch)
+        timestamp = millis()
+
+        # decode telemetry, write to file and update stored values
+        try:
+            telemetry_str = msg.decode(encoding=encoding).strip()
+        except Exception:
+            logger.exception(f"Error decoding: {msg!r}", exc_info=True)
+            telemetry_str = None
+        else:
+            # write the received telemetry to file and output stream
+            write_rx_message(
+                streams   = self._streams,
+                msg       = telemetry_str,
+                timestamp = timestamp,
+            )
             
+            # parse and store the received packet
+            self.educube.update_telemetry(telemetry_str, timestamp)
+            logger.info(
+                f"Received telemetry: ({timestamp}, {telemetry_str!r})"
+            )
+        return timestamp, telemetry_str
+    
     def _send_request_telemetry(self):
         """Assemble and send a telemetry request to the connected board."""
         return send_request_telemetry(self, self.educube, self.board_id)
@@ -301,19 +308,28 @@ class EduCubeConnection:
     def send(self, msg, encoding=None):
         """Encode and transmit a message over Serial connection.
 
-        For thread protection, calling the command actually queues the
-        message, so it can be transmitted as soon as possible.
+        For thread protection, calling this command actually queues the
+        message, to be transmitted as soon as possible.
 
         """
-        #TODO: logging?
-
+        
         _encoding = self._default_encoding if encoding is None else encoding 
+
+        #TODO: improve logging step here?
         
         # encode text to bytes
         _msg_bytes = msg.encode(encoding=_encoding)
 
         # add message to queue for transmission
         self._tx_queue.put(_msg_bytes)
+
+        # write to stdout and output file
+        #TODO: is error checking needed here?
+        write_tx_message(
+            streams   = self._streams,
+            msg       = msg,
+            timestamp = millis(),
+        )
     
     def send_command(self, board, command, settings):
         """
@@ -324,66 +340,20 @@ class EduCubeConnection:
         Parameters
         ----------
         board : str
-
+            the board (subsystem) to which the command will be sent
         command : str
-
-        settings : dict
-
+            the command string
+        settings : mapping
+            any arguments needed by the command
+        
         """
         # assemble the command
-        _cmd = format_command(self.educube.command(board, command, settings))
-        logger.info(f"Writing command: '{_cmd}'")
+        _cmd = self.educube.command(board, command, settings)
 
         # transmit the command to EduCube
         try:
             self.send(_cmd)
-        except:
+            logger.info(f"Sent command: '{_cmd}'")
+        except Exception:
             errmsg = f"Encountered Error while sending command {_cmd}", 
             logger.exception(errmsg, exc_info=True)
-
-        # record the command to file and output stream
-        #TODO: this try...except... isn't necessary if using OutputFile?
-        try:
-            write_tx_message(_cmd, millis(), self.output_file)
-        except:
-            errmsg = f"Encountered Error while logging {_cmd} to file"
-            logger.exception(errmsg, exc_info=True)
-
- 
-
-##############################################################################
-
-#class FakeEduCubeConnection(EduCubeConnection):
-#
-#    def setup_connections(self):
-#        logger.info("Setting up FAKE EduCube connections")
-#
-#        self.output_file = open(self.output_path, 'a')
-#        fd, filename = tempfile.mkstemp()
-#        self.connection = os.fdopen(fd, "w")
-#        logger.debug(f"Using fake serial connection to: {filename}")
-#
-#    def teardown_connections(self):
-#        logger.info("Tearing down FAKE EduCube connections")
-#
-#    def send_request_telem(self):
-#        logger.info("Fake connection: ignoring telem request")
-
-##############################################################################
-
-#def get_connection(connection_params):
-#    logger.info("Creating educube connection")
-#    if connection_params['fake']:
-#        educube_connection = FakeEduCubeConnection(
-#            connection_params['port'],
-#            connection_params['board'],
-#            baud=connection_params['baud']
-#        )
-#    else:
-#        educube_connection = EduCubeConnection(
-#            connection_params['port'],
-#            connection_params['board'],
-#            baud=connection_params['baud'],
-#        )
-#    return educube_connection
-

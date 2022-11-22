@@ -80,7 +80,7 @@ def parse_educube_telemetry(timestamp, telemetry_str):
     
     """
 
-    LOG.info(f"Parsing telemetry str: {telemetry_str!r}")
+    LOG.debug(f"Parsing telemetry str: {telemetry_str!r}")
 
     # separate telemetry parts and check for empty telemetry
     _telem_parts = telemetry_str.strip().split("|")

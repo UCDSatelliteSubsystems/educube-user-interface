@@ -1,5 +1,12 @@
-import serial
+"""
+educube.util._serial_utils
+
+"""
+
+# third party imports
 import click
+import serial
+import serial.tools.list_ports
 
 import logging
 logger = logging.getLogger(__name__)

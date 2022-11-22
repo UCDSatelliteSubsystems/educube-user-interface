@@ -1,15 +1,10 @@
-"""
-educube/web/server.py
-
+"""\
+educube.web.server
 
 Allows control of the EduCube via a web interface.
 
-
-There are two key functions: handle_commands receives commands from the web
-interface and uses them to call the appropriate methods of the EduCube
-controller; and handle_telemetry_updates collects new telemetry from the
-EduCube and passes them as JSON messages over the WebSocket to the web
-interface.
+This provides a class EduCubeWebApplication which runs the web GUI. The API
+user interface is through the server.run function.
 
 """
 
@@ -18,23 +13,25 @@ import os
 import json
 import logging
 import webbrowser
-from time import time
 
-# tornado web framework
+# tornado web framework imports
 import tornado.web
 import tornado.ioloop
 import tornado.httpserver
 import tornado.websocket
 
-logger = logging.getLogger(__name__)
+# local imports
+from educube.util import millis
+from educube.util.contextutils import listen_for_interrupt
 
+logger = logging.getLogger(__name__)
 
 # ****************************************************************************
 # Globals
 # ****************************************************************************
-dirname = os.path.dirname(__file__)
-STATIC_PATH = os.path.join(dirname, 'static')
-TEMPLATE_PATH = os.path.join(dirname, 'templates')
+DIRNAME = os.path.dirname(__file__)
+STATIC_PATH = os.path.join(DIRNAME, 'static')
+TEMPLATE_PATH = os.path.join(DIRNAME, 'templates')
 
 #DEFAULT_PORT = 18888
 
@@ -63,23 +60,18 @@ class EduCubeWebApplication(tornado.web.Application):
 # Request Handlers
 # ****************************************************************************
 class MainHandler(tornado.web.RequestHandler):
-    """."""
+    """Serve the main page."""
     def initialize(self, websocket_port):
         self.websocket_port = websocket_port
-#    def __init__(self, websocket_port, **kwargs):
-#        self.websocket_port = websocket_port
-#        super().__init__(**kwargs)
 
     def get(self):
-        self.render("educube.html", 
-                    port=self.websocket_port)
+        self.render("educube.html", port=self.websocket_port)
 
 
 class EduCubeServerSocket(tornado.websocket.WebSocketHandler):
-    """
-    WebSocket handler to send telemetry & receive commands from web interface.
+    """WebSocket handler for web interface telemetry & commands."""
 
-    """
+    #TODO: is there any reason to have multiple sockets on a single socket?
     _sockets = set()
 
     def __init__(self, application, request, educube_connection, **kwargs):
@@ -87,10 +79,10 @@ class EduCubeServerSocket(tornado.websocket.WebSocketHandler):
 
         tornado.websocket.WebSocketHandler.__init__(
             self, application, request, **kwargs
-            )
-
+        )
 
         # need to record update time to check for fresh telemetry
+        # (should be epoch time in milliseconds)
         self._last_update = 0 #TODO: fix this hack!
 
         # Startup periodic calls -- callback_time in milliseconds
@@ -103,12 +95,12 @@ class EduCubeServerSocket(tornado.websocket.WebSocketHandler):
     def open(self):
         self._sockets.add(self)
         logger.info("WebSocket opened")
-        print("WebSocket opened")
+#        print("WebSocket opened")
 
     def on_close(self):
         self._sockets.remove(self)
         logger.info("WebSocket closed")
-        print("WebSocket closed")
+#        print("WebSocket closed")
 
     def on_message(self, message):
         """
@@ -126,29 +118,26 @@ class EduCubeServerSocket(tornado.websocket.WebSocketHandler):
          
         """
 
-        logger.debug("WebSocket message received: {msg}".format(msg=message))
+        logger.debug(f"WebSocket message received: {message!r}")
         
         try:
             msg = json.loads(message)
         except json.JSONDecodeError:
-            errmsg = ('Received message could not be parsed as valid JSON'
-                      +'\n        {msg}'.format(msg=message)              )
-            logger.exception(errmsg, exc_info=True)
+            _errmsg = f'Could not parse message as valid JSON: {message!r}'
+            logger.exception(_errmsg, exc_info=True)
             return 
 
         if msg['msgtype'] == 'command':
-
             try:
                 self.connection.send_command(**msg['msgcontent'])
             except:
-                errmsg = ('Exception encountered while processing command '
-                          +'with arguments:\n       {msg}'.format(msg=msg))
+                _errmsg = f"Exception processing msgtype 'command': {msg}"
                 logger.exception(errmsg, exc_info=True)
                 return
 
         else:
-            logger.warning('Unknown msgtype: {}'.format(msg['msgtype']))
-
+            _msgtype = msg['msgtype']
+            logger.warning(f'Unknown msgtype: {_msgtype}')
 
     def put_updated_telemetry(self):
         """Get fresh telemetry and post it over the websocket."""
@@ -157,7 +146,7 @@ class EduCubeServerSocket(tornado.websocket.WebSocketHandler):
         _telemetry_packets = (
             self.connection.educube.new_telemetry(self._last_update)
         )
-        self._last_update = time()
+        self._last_update = millis()
         # when an error is encountered in parsing the data,
         # educube.parse_telemetry() returns None. This then causes another
         # error when turning to JSON, so first we need to filter out None.
@@ -171,119 +160,64 @@ class EduCubeServerSocket(tornado.websocket.WebSocketHandler):
                     'msgcontent' : _telemetry._serialised()
                 })
             except:
-                errmsg = ("Error encountered while converting the following "
-                          "telemetry to JSON: \n"
-                          "    {t}".format(t=_telemetry)                     )
-                logger.exception(errmsg, exc_info=True)
+                _errmsg = (
+                    f"Error converting EduCube telemetry to JSON: {_telemetry}"
+                )
+                logger.exception(_errmsg, exc_info=True)
                 continue
 
             # send telemetry over websocket
+            logger.debug(f"Updating telemetry: {_telemetry_json!r}")
             try:
-                logger.debug("Updating telemetry: {}"\
-                             .format(_telemetry_json))
-                for _socket in self._sockets:
-                    _socket.write_message(_telemetry_json)
+                for socket in self._sockets:
+                    socket.write_message(_telemetry_json)
             except:
-                errmsg = ("Error encountered while sending the following "
-                          "telemetry message over websockets: \n"
-                          "    {t}".format(t=_telemetry_json))
-                logger.exception(errmsg, exc_info=True)
+                _errmsg = (
+                    "Error sending EduCube telemetry over websocket: "
+                    f"{_telemetry_json!r}"
+                )
+                logger.exception(_errmsg, exc_info=True)
                 continue
-
-        
-
-# ****************************************************************************
-# Message parser
-# ****************************************************************************
-#def handle_command(educube, board, cmd, settings):
-#    """."""
-#    if cmd == 'T':
-#        educube.send_request_telem(board=board)
-#
-#    elif board == 'ADC' and cmd == 'MAG':
-#        educube.send_set_magtorquer(**settings)
-#
-#    elif board == 'ADC' and cmd == 'REACT':
-#        educube.send_set_reaction_wheel(**settings)
-#
-#    elif board == 'EXP' and cmd =='HEAT':
-#        educube.send_set_thermal_panel(**settings)
-#
-#    elif board == 'EPS' and cmd =='PWR_ON':
-#        educube.send_set_chip_power_on(**settings)
-#
-#    elif board == 'EPS' and cmd =='PWR_OFF':
-#        educube.send_set_chip_power_off(**settings)
-
-
-## should this be moved to become a method of EduCubeServerSocket??? Both
-## educube and sockets could then be provided as attributes. 
-## the parser should be moved into EduCube
-#def handle_telemetry_updates(educube, sockets):
-#    """
-#    Creates a function to be called periodically to send updated telemetry. 
-#
-#    """
-#    def _handle_telemetry_updates():
-#        telemetry_packets = educube.parse_telemetry()
-#
-#        # when an error is encountered in parsing the data,
-#        # educube.parse_telemetry() returns None. This then causes another
-#        # error when turning to JSON, so we need to filter out None.
-#        telemetry_packets = (t for t in telemetry_packets if t is not None)
-#
-#        for _telemetry in telemetry_packets:
-#            try: 
-#                _telemetry_json = json.dumps({
-#                    'msgtype'    : 'telemetry'             , 
-#                    'msgcontent' : _telemetry._serialised()
-#                })
-#            except:
-#                errmsg = ("Error encountered while converting the following "
-#                          "telemetry to JSON: \n"
-#                          "    {t}".format(t=_telemetry)                     )
-#                logger.exception(errmsg, exc_info=True)
-#                continue
-#
-#            try:
-#                logger.debug("Updating telemetry: {}"\
-#                             .format(_telemetry_json))
-#                for socket in sockets:
-#                    socket.write_message(_telemetry_json)
-#            except:
-#                errmsg = ("Error encountered while sending the following "
-#                          "telemetry message over websockets: \n"
-#                          "    {t}".format(t=_telemetry_json))
-#                logger.exception(errmsg, exc_info=True)
-#                continue
-#
-#    return _handle_telemetry_updates
-
 
 # ****************************************************************************
 # Main input
 # ****************************************************************************
+def log_interrupt_received():
+    logger.info('KeyboardInterrupt received')
+    return
+
+def run_eventloop(ioloop):
+    """Set Tornado ioloop running until KeyboardInterrupt."""
+    try:
+        logger.info(f'Starting webserver ioloop {ioloop!r}')
+        with listen_for_interrupt(callback=log_interrupt_received):
+            ioloop.start()
+    finally:
+        # make sure to stop the loop, even if another exception occurred!
+        logger.info(f'Stopping webserver ioloop {ioloop!r}')
+        ioloop.stop()
+    return
+
+
+
 def run(educube_connection, port):
     """
     Start and run the IOLoop, given an EduCubeConnection object to handle.
     """
     application = EduCubeWebApplication(educube_connection, port)
+
+    # create the web server
     http_server = tornado.httpserver.HTTPServer(application)
     http_server.listen(port)
 
+    # open a new browser tab
     _url = "http://localhost:{port}".format(port=port)
     webbrowser.open_new(_url)
 
-    #TODO: context manager?
+    # run the ioloop
     _ioloop = tornado.ioloop.IOLoop.instance()
-    try:
-        logger.info(f'Starting webserver at {_url}')
-        _ioloop.start()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        logger.info('KeyBoardInterrupt received: Stopping webserver')
-        _ioloop.stop()
-        logger.info('KeyBoardInterrupt received: Stopping webserver - DONE')
-        
+    logger.info(f'Starting webserver at {_url}')
+    run_eventloop(_ioloop)
+    logger.info(f'Stopped webserver at {_url}')
+
 

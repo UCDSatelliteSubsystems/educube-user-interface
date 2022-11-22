@@ -11,12 +11,12 @@ def configure_connection(port, board, baudrate, fake=False, **kwargs):
 
     if fake:
         educube_connection = FakeEduCubeConnection(
-            port, board, baud=baud
+            port, board, baudrate=baudrate, **kwargs
         )
 
     else:
         educube_connection = EduCubeConnection(
-            port, board, baudrate=baudrate,
+            port, board, baudrate=baudrate, **kwargs
         )
 
     return educube_connection
